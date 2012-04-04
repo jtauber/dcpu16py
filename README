@@ -1,3 +1,7 @@
 A Python implementation of Notch's DCPU-16.
 
 See http://0x10c.com/doc/dcpu-16.txt for specification.
+
+Notch apparently started doing a 6502 emulator first. Given I did one in
+Python <https://github.com/jtauber/applepy> it only seems fitting I now
+do a DCPU-16 implementation in Python too :-)
