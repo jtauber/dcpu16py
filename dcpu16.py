@@ -4,11 +4,22 @@
 class DCPU16:
     
     def __init__(self, memory):
-        self.memory = memory
+        self.memory = [0] * 0x10000
+        for i, w in enumerate(memory):
+            self.memory[i] = w
+        self.A = 0x0000
+        self.B = 0x0000
+        self.C = 0x0000
+        self.X = 0x0000
+        self.Y = 0x0000
+        self.Z = 0x0000
+        self.I = 0x0000
+        self.J = 0x0000
+        self.PC = 0x0000
+        self.SP = 0xFFFF
+        self.O = 0x0000
     
     def disasm(self):
-        self.PC = 0
-        
         while self.PC < len(self.memory):
             w = self.memory[self.PC]
             self.PC += 1
