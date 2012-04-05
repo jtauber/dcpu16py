@@ -45,7 +45,7 @@ class DCPU16:
         a.value = r
     
     def SUB(self, a, b):
-        o, r = divmod(a.value + b.value, 0x10000)
+        o, r = divmod(a.value - b.value, 0x10000)
         self.registers[O].value = 0xFFFF if o == -1 else 0x0000
         a.value = r
     
