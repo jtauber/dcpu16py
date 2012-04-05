@@ -211,7 +211,7 @@ class DCPU16:
             self.registers[i].value) for i in range(11))
     
     def dump_stack(self):
-        print "[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value + 1, 0x10000)) + "]"
+        print "[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value, 0xFFFF)) + "]"
     
     def disasm(self):
         while self.registers[PC].value < len(self.memory):
