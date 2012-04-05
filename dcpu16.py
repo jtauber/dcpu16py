@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import os
 import sys
 
 
@@ -8,6 +9,7 @@ class Cell:
     """
     a cell enables us to pass around a reference to a register or memory location rather than the value
     """
+    __slots__ = "values",
     def __init__(self, value=0):
         self.value = value
 
@@ -182,15 +184,16 @@ class DCPU16:
 
 
 def entry_point(argv):
-    if len(sys.argv) == 2:
+    if len(argv) == 2:
         program = []
-        f = open(sys.argv[1])
+        fp = os.open(argv[1], os.O_RDONLY, 0777)
         while True:
-            hi = f.read(1)
+            hi = os.read(fp, 1)
             if not hi:
                 break
-            lo = f.read(1)
+            lo = os.read(fp, 1)
             program.append((ord(hi) << 8) + ord(lo))
+        os.close(fp)
         
         dcpu16 = DCPU16(program)
         dcpu16.run(debug=True)
@@ -204,4 +207,4 @@ def target(*args):
 
 
 if __name__ == "__main__":
-    entry_point(None)
+    entry_point(sys.argv)
