@@ -117,6 +117,10 @@ line_regex = re.compile(r"""
 
 
 IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5, "I": 0x6, "J": 0x7, "POP": 0x18, "PC": 0x1C}
+OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA, "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}
+
+
+program = []
 
 for line in example.split("\n"):
     token_dict = line_regex.match(line).groupdict()
@@ -124,13 +128,14 @@ for line in example.split("\n"):
         print "syntax error: %s" % line
         break
     if token_dict["basic"] is not None:
-        o = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA, "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}[token_dict["basic"]]
+        o = OPCODES[token_dict["basic"]]
         
-        x = None
         if token_dict["op1_register"] is not None:
             a = IDENTIFIERS[token_dict["op1_register"]]
+            x = None
         elif token_dict["op1_register_indirect"] is not None:
             a = 0x08 + IDENTIFIERS[token_dict["op1_register_indirect"]]
+            x = None
         elif token_dict["op1_hex_indexed"] is not None:
             a = 0x10 + IDENTIFIERS[token_dict["op1_hex_indexed_index"]]
             x = int(token_dict["op1_hex_indexed"], 16)
@@ -138,22 +143,24 @@ for line in example.split("\n"):
             a = 0x10 + IDENTIFIERS[token_dict["op1_decimal_indexed_index"]]
             x = int(token_dict["op1_decimal_indexed"], 16)
         elif token_dict["op1_hex_indirect"] is not None:
+            a = 0x1E
             x = int(token_dict["op1_hex_indirect"], 16)
-            a = 0x1E
         elif token_dict["op1_decimal_indirect"] is not None:
-            x = int(token_dict["op1_decimal_indirect"])
             a = 0x1E
+            x = int(token_dict["op1_decimal_indirect"])
         elif token_dict["op1_hex_literal"] is not None:
             l = int(token_dict["op1_hex_literal"], 16)
             if l < 0x20:
                 a = 0x20 + l
+                x = None
             else:
-                a = 0x1f
+                a = 0x1F
                 x = l
         elif token_dict["op1_decimal_literal"] is not None:
             l = int(token_dict["op1_decimal_literal"])
             if l < 0x20:
                 a = 0x20 + l
+                x = None
             else:
                 a = 0x1F
                 x = l
@@ -161,11 +168,12 @@ for line in example.split("\n"):
             a = 0x1F
             x = 0xFFFF
         
-        y = None
         if token_dict["op2_register"] is not None:
             b = IDENTIFIERS[token_dict["op2_register"]]
+            y = None
         elif token_dict["op2_register_indirect"] is not None:
             b = 0x08 + IDENTIFIERS[token_dict["op2_register_indirect"]]
+            y = None
         elif token_dict["op2_hex_indexed"] is not None:
             b = 0x10 + IDENTIFIERS[token_dict["op2_hex_indexed_index"]]
             y = int(token_dict["op2_hex_indexed"], 16)
@@ -173,15 +181,16 @@ for line in example.split("\n"):
             b = 0x10 + IDENTIFIERS[token_dict["op2_decimal_indexed_index"]]
             y = int(token_dict["op2_decimal_indexed"], 16)
         elif token_dict["op2_hex_indirect"] is not None:
+            b = 0x1E
             y = int(token_dict["op2_hex_indirect"], 16)
-            b = 0x1E
         elif token_dict["op2_decimal_indirect"] is not None:
-            y = int(token_dict["op2_decimal_indirect"])
             b = 0x1E
+            y = int(token_dict["op2_decimal_indirect"])
         elif token_dict["op2_hex_literal"] is not None:
             l = int(token_dict["op2_hex_literal"], 16)
             if l < 0x20:
                 b = 0x20 + l
+                y = None
             else:
                 b = 0x1f
                 y = l
@@ -189,6 +198,7 @@ for line in example.split("\n"):
             l = int(token_dict["op2_decimal_literal"])
             if l < 0x20:
                 b = 0x20 + l
+                y = None
             else:
                 b = 0x1F
                 y = l
@@ -196,12 +206,11 @@ for line in example.split("\n"):
             b = 0x1F
             y = 0xFFFF
         
-        print "%04x" % ((b << 10) + (a << 4) + o),
+        program.append(((b << 10) + (a << 4) + o))
         if x is not None:
-            print "%04x" % x,
+            program.append(x)
         if y is not None:
-            print "%04x" % y,
-        print
+            program.append(y)
     elif token_dict["nonbasic"] is not None:
         o = 0x00
         a = 0x01
@@ -228,7 +237,7 @@ for line in example.split("\n"):
             if l < 0x20:
                 b = 0x20 + l
             else:
-                b = 0x1f
+                b = 0x1F
                 y = l
         elif token_dict["op3_decimal_literal"] is not None:
             l = int(token_dict["op3_decimal_literal"])
@@ -241,12 +250,14 @@ for line in example.split("\n"):
             b = 0x1F
             y = 0xFFFF
         
-        print "%04x" % ((b << 10) + (a << 4) + o),
+        program.append(((b << 10) + (a << 4) + o))
         if x is not None:
-            print "%04x" % x,
+            program.append(x)
         if y is not None:
-            print "%04x" % y,
-        print
+            program.append(y)
         
     else: # blank line or comment-only
         pass
+
+for word in program:
+    print "%04x" % word
