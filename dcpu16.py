@@ -87,7 +87,7 @@ class DCPU16:
         a.value = a.value & b.value
     
     def BOR(self, a, b):
-        a.value = a.value & b.value
+        a.value = a.value | b.value
     
     def XOR(self, a, b):
         a.value = a.value ^ b.value
