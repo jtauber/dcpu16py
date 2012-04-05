@@ -1,39 +1,7 @@
 #!/usr/bin/env python
 
 import re
-
-
-example = """
-; Try some basic stuff
-                      SET A, 0x30              ; 7c01 0030
-                      SET [0x1000], 0x20       ; 7de1 1000 0020
-                      SUB A, [0x1000]          ; 7803 1000
-                      IFN A, 0x10              ; c00d 
-                         SET PC, crash         ; 7dc1 001a [*]
-                      
-        ; Do a loopy thing
-                      SET I, 10                ; a861
-                      SET A, 0x2000            ; 7c01 2000
-        :loop         SET [0x2000+I], [A]      ; 2161 2000
-                      SUB I, 1                 ; 8463
-                      IFN I, 0                 ; 806d
-                         SET PC, loop          ; 7dc1 000d [*]
-        
-        ; Call a subroutine
-                      SET X, 0x4               ; 9031
-                      JSR testsub              ; 7c10 0018 [*]
-                      SET PC, crash            ; 7dc1 001a [*]
-        
-        :testsub      SHL X, 4                 ; 9037
-                      SET PC, POP              ; 61c1
-                        
-        ; Hang forever. X should now be 0x40 if everything went right.
-        :crash        SET PC, crash            ; 7dc1 001a [*]
-        
-        ; [*]: Note that these can be one word shorter and one cycle faster by using the short form (0x00-0x1f) of literals,
-        ;      but my assembler doesn't support short form labels yet.     
-"""
-
+import sys
 
 line_regex = re.compile(r"""
     ^
@@ -123,7 +91,14 @@ OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x
 program = []
 labels = {}
 
-for line in example.split("\n"):
+if len(sys.argv) == 3:
+    input_filename = sys.argv[1]
+    output_filename = sys.argv[2]
+else:
+    print "usage: ./asm.py <input.asm> <output.obj>"
+    sys.exit(1)
+
+for line in open(input_filename):
     token_dict = line_regex.match(line).groupdict()
     if token_dict is None:
         print "syntax error: %s" % line
@@ -264,7 +239,10 @@ for line in example.split("\n"):
     else: # blank line or comment-only
         pass
 
-for word in program:
-    if isinstance(word, str):
-        word = labels[word]
-    print "%04x" % word
+with open(output_filename, "wb") as f:
+    for word in program:
+        if isinstance(word, str):
+            word = labels[word]
+        hi, lo = divmod(word, 0x100)
+        f.write(chr(hi))
+        f.write(chr(lo))
