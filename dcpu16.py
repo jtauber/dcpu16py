@@ -215,67 +215,6 @@ class DCPU16:
             print "[]"
         else:
             print "[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value, 0x10000)) + "]"
-    
-    def disasm(self):
-        while self.registers[PC].value < len(self.memory):
-            w = self.memory[self.registers[PC].value].value
-            self.registers[PC].value += 1
-            
-            operands, opcode = divmod(w, 16)
-            b, a = divmod(operands, 64)
-            
-            if opcode == 0x00:
-                if a == 0x01:
-                    print "JSR",
-                else:
-                    continue
-            else:
-                print [
-                    None, "SET", "ADD", "SUB", "MUL", "DIV", "MOD", "SHL",
-                    "SHR", "AND", "BOR", "XOR", "IFE", "IFN", "IFG", "IFB"
-                ][opcode],
-                
-                if a < 0x08:
-                    print "%s," % ["A", "B", "C", "X", "Y", "Z", "I", "J"][a],
-                elif a < 0x10:
-                    print "[%s]," % ["A", "B", "C", "X", "Y", "Z", "I", "J"][a % 0x08],
-                elif a < 0x18:
-                    next_word = self.memory[self.registers[PC].value].value
-                    self.registers[PC].value += 1
-                    print "[0x%02x + %s]," % (next_word, ["A", "B", "C", "X", "Y", "Z", "I", "J"][a % 0x10]),
-                elif a < 0x1E:
-                    print "%s," % ["POP", "PEEK", "PUSH", "SP", "PC", "O"][a % 0x18],
-                elif a == 0x1E:
-                    next_word = self.memory[self.registers[PC].value].value
-                    self.registers[PC].value += 1
-                    print "[0x%02x]," % next_word,
-                elif a == 0x1F:
-                    next_word = self.memory[self.registers[PC].value].value
-                    self.registers[PC].value += 1
-                    print "0x%02x," % next_word,
-                else:
-                    print "0x%02x," % (a % 0x20),
-            
-            if b < 0x08:
-                print "%s" % ["A", "B", "C", "X", "Y", "Z", "I", "J"][b]
-            elif b < 0x10:
-                print "[%s]" % ["A", "B", "C", "X", "Y", "Z", "I", "J"][b % 0x08]
-            elif b < 0x18:
-                next_word = self.memory[self.registers[PC].value].value
-                self.registers[PC].value += 1
-                print "[0x%02x + %s]" % (next_word, ["A", "B", "C", "X", "Y", "Z", "I", "J"][b % 0x10])
-            elif b < 0x1E:
-                print "%s" % ["POP", "PEEK", "PUSH", "SP", "PC", "O"][b % 0x18]
-            elif b == 0x1E:
-                next_word = self.memory[self.registers[PC].value].value
-                self.registers[PC].value += 1
-                print "[0x%02x]" % next_word
-            elif b == 0x1F:
-                next_word = self.memory[self.registers[PC].value].value
-                self.registers[PC].value += 1
-                print "0x%02x" % next_word
-            else:
-                print "0x%02x" % (b % 0x20)
 
 
 if __name__ == "__main__":
@@ -286,9 +225,5 @@ if __name__ == "__main__":
         0x9037, 0x61c1, 0x7dc1, 0x001a, 0x0000, 0x0000, 0x0000, 0x0000,
     ]
     
-    dcpu16 = DCPU16(example)
-    dcpu16.disasm()
-    
-    # run this time
     dcpu16 = DCPU16(example)
     dcpu16.run(debug=True)
