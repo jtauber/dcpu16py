@@ -22,6 +22,10 @@ stack_op = P.Keyword("PEEK") | P.Keyword("POP") | P.Keyword("PUSH")
 
 hex_literal = P.Combine(P.Literal("0x") + P.Word(P.hexnums))
 dec_literal = P.Word(P.nums)
+
+hex_literal.setParseAction(lambda s, l, t: int(t[0], 16))
+dec_literal.setParseAction(lambda s, l, t: int(t[0]))
+
 literal = hex_literal | dec_literal | identifier
 
 instruction = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB JSR")
@@ -46,8 +50,6 @@ line = (P.Optional(label("label")) +
 
 full_grammar = P.stringStart + P.OneOrMore(P.Group(line)) + P.stringEnd
 
-hex_literal.setParseAction(lambda s, l, t: int(t[0], 16))
-dec_literal.setParseAction(lambda s, l, t: int(t[0]))
 
 if DEBUG:
     identifier.setName("identifier").setDebug()
