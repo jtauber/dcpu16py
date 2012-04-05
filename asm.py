@@ -121,12 +121,17 @@ OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x
 
 
 program = []
+labels = {}
 
 for line in example.split("\n"):
     token_dict = line_regex.match(line).groupdict()
     if token_dict is None:
         print "syntax error: %s" % line
         break
+    
+    if token_dict["label"]:
+        labels[token_dict["label"]] = len(program)
+    
     if token_dict["basic"] is not None:
         o = OPCODES[token_dict["basic"]]
         
@@ -166,7 +171,7 @@ for line in example.split("\n"):
                 x = l
         elif token_dict["op1_label"] is not None:
             a = 0x1F
-            x = 0xFFFF
+            x = token_dict["op1_label"]
         
         if token_dict["op2_register"] is not None:
             b = IDENTIFIERS[token_dict["op2_register"]]
@@ -204,7 +209,7 @@ for line in example.split("\n"):
                 y = l
         elif token_dict["op2_label"] is not None:
             b = 0x1F
-            y = 0xFFFF
+            y = token_dict["op2_label"]
         
         program.append(((b << 10) + (a << 4) + o))
         if x is not None:
@@ -248,7 +253,7 @@ for line in example.split("\n"):
                 y = l
         elif token_dict["op3_label"] is not None:
             b = 0x1F
-            y = 0xFFFF
+            y = token_dict["op3_label"]
         
         program.append(((b << 10) + (a << 4) + o))
         if x is not None:
@@ -260,4 +265,6 @@ for line in example.split("\n"):
         pass
 
 for word in program:
+    if isinstance(word, str):
+        word = labels[word]
     print "%04x" % word
