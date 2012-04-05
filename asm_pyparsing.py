@@ -9,6 +9,9 @@ import os
 # Run with "DEBUG=1 python ./asm_pyparsing.py"
 DEBUG = "DEBUG" in os.environ
 
+# otherwise \n is also treated as ignorable whitespace
+P.ParserElement.setDefaultWhitespaceChars(' \t')
+
 identifier = P.Word(P.alphas+"_", P.alphanums+"_")
 label = P.Combine(P.Literal(":").suppress() + identifier)
 
