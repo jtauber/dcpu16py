@@ -108,7 +108,7 @@ class DCPU16:
         pc = self.registers[PC].value
         self.memory[self.registers[SP].value].value = pc
         self.registers[SP].value -= 1
-        self.registers[PC].value = b
+        self.registers[PC].value = b.value
     
     def run(self, debug=False):
         while True:
