@@ -7,7 +7,7 @@ class Cell:
         self.value = value
 
 
-PC, O = 8, 10
+PC, SP, O = 8, 9, 10
 
 class DCPU16:
     
@@ -104,7 +104,13 @@ class DCPU16:
     def IFB(self, a, b):
         self.skip = not ((a.value & b.value) != 0)
     
-    def run(self):
+    def JSR(self, a, b):
+        pc = self.registers[PC].value
+        self.memory[self.registers[SP].value].value = pc
+        self.registers[SP].value -= 1
+        self.registers[PC].value = b
+    
+    def run(self, debug=False):
         while True:
             pc = self.registers[PC].value
             w = self.memory[pc].value
@@ -113,7 +119,8 @@ class DCPU16:
             operands, opcode = divmod(w, 16)
             b, a = divmod(operands, 64)
             
-            print "%04X: %04X" % (pc, w)
+            if debug:
+                print "%04X: %04X" % (pc, w)
             
             if opcode == 0x00:
                 if a == 0x01:
@@ -189,7 +196,10 @@ class DCPU16:
             else:
                 arg2 = Cell(b % 0x20)
             
-            if not self.skip:
+            if self.skip:
+                if debug:
+                    print "skipping"
+            else:
                 op(arg1, arg2)
     
     def disasm(self):
@@ -267,4 +277,4 @@ if __name__ == "__main__":
     
     # run this time
     dcpu16 = DCPU16(example)
-    dcpu16.run()
+    dcpu16.run(debug=True)
