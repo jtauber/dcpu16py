@@ -199,6 +199,7 @@ class DCPU16:
             if self.skip:
                 if debug:
                     print "skipping"
+                self.skip = False
             else:
                 op(arg1, arg2)
                 if debug:
