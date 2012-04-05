@@ -2,7 +2,7 @@
 
 
 import sys
-
+import inspect
 
 class Cell:
     """
@@ -15,14 +15,15 @@ class Cell:
 # offsets into DCPU16.registers
 PC, SP, O = 8, 9, 10
 
-opcodes = {}
 def opcode(code):
-    
+    '''A decorator for opcodes'''
     def decorator(func):
-        opcodes[code] = func
+        setattr(func, '_is_opcode', True)
+        setattr(func, '_opcode', code)
         return func
 
     return decorator
+
 
 class DCPU16:
     
@@ -30,6 +31,11 @@ class DCPU16:
         self.memory = [Cell(memory[i]) if i < len(memory) else Cell() for i in range(0x10000)]
         self.registers = tuple(Cell() for _ in range(11))
         self.skip = False
+
+        self.opcodes = {}
+        for name, value in inspect.getmembers(self):
+            if inspect.ismethod(value) and getattr(value, '_is_opcode', False):
+                self.opcodes[getattr(value, '_opcode')] = value 
     
     @opcode(0x01)
     def SET(self, a, b):
@@ -173,7 +179,7 @@ class DCPU16:
             else:
                 arg1 = self.get_operand(a)
 
-            op = opcodes[opcode]
+            op = self.opcodes[opcode]
             arg2 = self.get_operand(b)
             
             if self.skip:
@@ -181,7 +187,7 @@ class DCPU16:
                     print "skipping"
                 self.skip = False
             else:
-                op(self, arg1, arg2)
+                op(arg1, arg2)
                 if debug:
                     self.dump_registers()
                     self.dump_stack()
