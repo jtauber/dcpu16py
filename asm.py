@@ -98,10 +98,18 @@ else:
     print "usage: ./asm.py <input.asm> <output.obj>"
     sys.exit(1)
 
-for line in open(input_filename):
-    token_dict = line_regex.match(line).groupdict()
+def report_error(filename, lineno, error):
+    print >> sys.stderr, '%s:%i: %s' % (input_filename, lineno, error)
+
+for lineno, line in enumerate(open(input_filename), start=1):
+    mo = line_regex.match(line)
+    if mo is None:
+        report_error(input_filename, lineno, "Syntax error")
+        break
+
+    token_dict = mo.groupdict()
     if token_dict is None:
-        print "syntax error: %s" % line
+        report_error(input_filename, lineno, "Syntax error")
         break
     
     if token_dict["label"]:
