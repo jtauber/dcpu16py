@@ -32,6 +32,7 @@ class Disassembler:
     
     def run(self):
         while self.offset < len(self.program):
+            offset = self.offset
             w = self.next_word()
             
             operands, opcode = divmod(w, 16)
@@ -39,14 +40,13 @@ class Disassembler:
             
             if opcode == 0x00:
                 if a == 0x01:
-                    print "JSR",
+                    first = "JSR"
                 else:
                     continue
             else:
-                print INSTRUCTIONS[opcode],
-                print self.format_operand(a) + ",",
+                first = "%s %s" % (INSTRUCTIONS[opcode], self.format_operand(a))
             
-            print self.format_operand(b)
+            print "%04x: %s, %s" % (offset, first, self.format_operand(b))
 
 
 if __name__ == "__main__":
