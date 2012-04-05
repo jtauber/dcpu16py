@@ -195,4 +195,4 @@ if __name__ == "__main__":
         dcpu16 = DCPU16(program)
         dcpu16.run(debug=True)
     else:
-        print "usage: ./dcup16.py <object-file>"
+        print "usage: ./dcpu16.py <object-file>"
