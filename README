@@ -5,3 +5,12 @@ See http://0x10c.com/doc/dcpu-16.txt for specification.
 Notch apparently started doing a 6502 emulator first. Given I did one in
 Python <https://github.com/jtauber/applepy> it only seems fitting I now
 do a DCPU-16 implementation in Python too :-)
+
+STATUS
+
+Runs the example program successfully. Cycle times are not yet taken
+into account but it otherwise should be feature-complete.
+
+I plan to work on an assembler next and possibly a Forth implementation.
+
+I'm also keen to find out how Notch plans I/O to work.
