@@ -20,7 +20,7 @@ class DCPU16:
     
     def __init__(self, memory):
         self.memory = [Cell(memory[i]) if i < len(memory) else Cell() for i in range(0x10000)]
-        self.registers = [Cell() for _ in range(11)]
+        self.registers = tuple(Cell() for _ in range(11))
         self.skip = False
     
     def SET(self, a, b):
