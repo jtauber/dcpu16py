@@ -206,7 +206,7 @@ class DCPU16:
                     self.dump_registers()
     
     def dump_registers(self):
-        print " ".join("%s = %04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J", "PC", "SP", "O"][i],
+        print " ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J", "PC", "SP", "O"][i],
             self.registers[i].value) for i in range(11))
     
     def disasm(self):
