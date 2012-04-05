@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 
+import sys
+
+
 class Cell:
     """
     a cell enables us to pass around a reference to a register or memory location rather than the value
@@ -179,15 +182,21 @@ class DCPU16:
 
 
 def entry_point(argv):
-    example = [
-        0x7c01, 0x0030, 0x7de1, 0x1000, 0x0020, 0x7803, 0x1000, 0xc00d,
-        0x7dc1, 0x001a, 0xa861, 0x7c01, 0x2000, 0x2161, 0x2000, 0x8463,
-        0x806d, 0x7dc1, 0x000d, 0x9031, 0x7c10, 0x0018, 0x7dc1, 0x001a,
-        0x9037, 0x61c1, 0x7dc1, 0x001a, 0x0000, 0x0000, 0x0000, 0x0000,
-    ]
-    
-    dcpu16 = DCPU16(example)
-    dcpu16.run(debug=True)
+    if len(sys.argv) == 2:
+        program = []
+        f = open(sys.argv[1])
+        while True:
+            hi = f.read(1)
+            if not hi:
+                break
+            lo = f.read(1)
+            program.append((ord(hi) << 8) + ord(lo))
+        
+        dcpu16 = DCPU16(program)
+        dcpu16.run(debug=True)
+    else:
+        print "usage: ./dcup16.py <object-file>"
+        return 1
 
 
 def target(*args):
