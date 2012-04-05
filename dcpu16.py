@@ -22,7 +22,7 @@ class DCPU16:
     
     def __init__(self, memory):
         self.memory = [Cell(memory[i]) if i < len(memory) else Cell() for i in range(0x10000)]
-        self.registers = (Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell())
+        self.registers = tuple(Cell() for _ in range(11))
         self.skip = False
     
     def SET(self, a, b):
@@ -39,7 +39,7 @@ class DCPU16:
         a.value = r
     
     def MUL(self, a, b):
-        o, r = divmod(a.value + b.value, 0x10000)
+        o, r = divmod(a.value * b.value, 0x10000)
         a.value = r
         self.registers[O].value = o % 0x10000
     
@@ -198,7 +198,7 @@ def entry_point(argv):
         dcpu16 = DCPU16(program)
         dcpu16.run(debug=True)
     else:
-        print "usage: ./dcup16.py <object-file>"
+        print "usage: ./dcpu16.py <object-file>"
         return 1
 
 

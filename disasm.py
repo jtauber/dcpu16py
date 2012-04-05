@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
+import sys
+
+
 INSTRUCTIONS = [None, "SET", "ADD", "SUB", "MUL", "DIV", "MOD", "SHL", "SHR", "AND", "BOR", "XOR", "IFE", "IFN", "IFG", "IFB"]
 IDENTIFERS = ["A", "B", "C", "X", "Y", "Z", "I", "J", "POP", "PEEK", "PUSH", "SP", "PC", "O"]
+
 
 class Disassembler:
     
@@ -50,12 +54,17 @@ class Disassembler:
 
 
 if __name__ == "__main__":
-    example = [
-        0x7c01, 0x0030, 0x7de1, 0x1000, 0x0020, 0x7803, 0x1000, 0xc00d,
-        0x7dc1, 0x001a, 0xa861, 0x7c01, 0x2000, 0x2161, 0x2000, 0x8463,
-        0x806d, 0x7dc1, 0x000d, 0x9031, 0x7c10, 0x0018, 0x7dc1, 0x001a,
-        0x9037, 0x61c1, 0x7dc1, 0x001a, 0x0000, 0x0000, 0x0000, 0x0000,
-    ]
-    
-    d = Disassembler(example)
-    d.run()
+    if len(sys.argv) == 2:
+        program = []
+        f = open(sys.argv[1])
+        while True:
+            hi = f.read(1)
+            if not hi:
+                break
+            lo = f.read(1)
+            program.append((ord(hi) << 8) + ord(lo))
+        
+        d = Disassembler(program)
+        d.run()
+    else:
+        print "usage: ./disasm.py <object-file>"
