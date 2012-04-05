@@ -2,38 +2,22 @@
 
 
 class Cell:
-    
-    def __init__(self, value):
+    """
+    a cell enables us to pass around a reference to a register or memory location rather than the value
+    """
+    def __init__(self, value=0):
         self.value = value
 
 
+# offsets into DCPU16.registers
 PC, SP, O = 8, 9, 10
+
 
 class DCPU16:
     
     def __init__(self, memory):
-        self.memory = []
-        
-        for i in range(0x10000):
-            if i < len(memory):
-                self.memory.append(Cell(memory[i]))
-            else:
-                self.memory.append(Cell(0x000))
-        
-        self.registers = (
-            Cell(0x0000), # A
-            Cell(0x0000), # B
-            Cell(0x0000), # C
-            Cell(0x0000), # X
-            Cell(0x0000), # Y
-            Cell(0x0000), # Z
-            Cell(0x0000), # I
-            Cell(0x0000), # J
-            Cell(0x0000), # PC
-            Cell(0x0000), # SP
-            Cell(0x0000), # O
-        )
-        
+        self.memory = [Cell(memory[i]) if i < len(memory) else Cell() for i in range(0x10000)]
+        self.registers = (Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell(), Cell())
         self.skip = False
     
     def SET(self, a, b):
@@ -110,6 +94,40 @@ class DCPU16:
         self.memory[self.registers[SP].value].value = pc
         self.registers[PC].value = b.value
     
+    def get_operand(self, a):
+        if a < 0x08:
+            arg1 = self.registers[a]
+        elif a < 0x10:
+            arg1 = self.memory[self.registers[a % 0x08].value]
+        elif a < 0x18:
+            next_word = self.memory[self.registers[PC].value].value
+            self.registers[PC].value += 1
+            arg1 = self.memory[next_word + self.registers[a % 0x10].value]
+        elif a == 0x18:
+            arg1 = self.memory[self.registers[SP].value]
+            self.registers[SP].value = (self.registers[SP].value + 1) % 0x10000
+        elif a == 0x19:
+            arg1 = self.memory[self.registers[SP].value]
+        elif a == 0x1A:
+            self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
+            arg1 = self.memory[self.registers[SP].value]
+        elif a == 0x1B:
+            arg1 = self.registers[SP]
+        elif a == 0x1C:
+            arg1 = self.registers[PC]
+        elif a == 0x1D:
+            arg1 = self.registers[O]
+        elif a == 0x1E:
+            arg1 = self.memory[self.memory[self.registers[PC].value].value]
+            self.registers[PC].value += 1
+        elif a == 0x1F:
+            arg1 = self.memory[self.registers[PC].value]
+            self.registers[PC].value += 1
+        else:
+            arg1 = Cell(a % 0x20)
+        
+        return arg1
+    
     def run(self, debug=False):
         while True:
             pc = self.registers[PC].value
@@ -125,6 +143,7 @@ class DCPU16:
             if opcode == 0x00:
                 if a == 0x01:
                     op = self.JSR
+                    arg1 = None
                 else:
                     continue
             else:
@@ -134,67 +153,9 @@ class DCPU16:
                     self.SHR, self.AND, self.BOR, self.XOR, self.IFE, self.IFN, self.IFG, self.IFB
                 ][opcode]
                 
-                if a < 0x08:
-                    arg1 = self.registers[a]
-                elif a < 0x10:
-                    arg1 = self.memory[self.registers[a % 0x08].value]
-                elif a < 0x18:
-                    next_word = self.memory[self.registers[PC].value].value
-                    self.registers[PC].value += 1
-                    arg1 = self.memory[next_word + self.registers[a % 0x10].value]
-                elif a == 0x18:
-                    arg1 = self.memory[self.registers[SP].value]
-                    self.registers[SP].value = (self.registers[SP].value + 1) % 0x10000
-                elif a == 0x19:
-                    arg1 = self.memory[self.registers[SP].value]
-                elif a == 0x1A:
-                    self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
-                    arg1 = self.memory[self.registers[SP].value]
-                elif a == 0x1B:
-                    arg1 = self.registers[SP]
-                elif a == 0x1C:
-                    arg1 = self.registers[PC]
-                elif a == 0x1D:
-                    arg1 = self.registers[O]
-                elif a == 0x1E:
-                    arg1 = self.memory[self.memory[self.registers[PC].value].value]
-                    self.registers[PC].value += 1
-                elif a == 0x1F:
-                    arg1 = self.memory[self.registers[PC].value]
-                    self.registers[PC].value += 1
-                else:
-                    arg1 = Cell(a % 0x20)
+                arg1 = self.get_operand(a)
             
-            if b < 0x08:
-                arg2 = self.registers[b]
-            elif b < 0x10:
-                arg2 = self.memory[self.registers[b % 0x08].value]
-            elif b < 0x18:
-                next_word = self.memory[self.registers[PC].value].value
-                self.registers[PC].value += 1
-                arg2 = self.memory[next_word + self.registers[b % 0x10].value]
-            elif b == 0x18:
-                arg2 = self.memory[self.registers[SP].value]
-                self.registers[SP].value = (self.registers[SP].value + 1) % 0x10000
-            elif b == 0x19:
-                arg2 = self.memory[self.registers[SP].value]
-            elif b == 0x1A:
-                self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
-                arg2 = self.memory[self.registers[SP].value]
-            elif b == 0x1B:
-                arg2 = self.registers[SP]
-            elif b == 0x1C:
-                arg2 = self.registers[PC]
-            elif b == 0x1D:
-                arg2 = self.registers[O]
-            elif b == 0x1E:
-                arg2 = self.memory[self.memory[self.registers[PC].value].value]
-                self.registers[PC].value += 1
-            elif b == 0x1F:
-                arg2 = self.memory[self.registers[PC].value]
-                self.registers[PC].value += 1
-            else:
-                arg2 = Cell(b % 0x20)
+            arg2 = self.get_operand(b)
             
             if self.skip:
                 if debug:
