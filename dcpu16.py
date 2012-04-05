@@ -105,9 +105,9 @@ class DCPU16:
         self.skip = not ((a.value & b.value) != 0)
     
     def JSR(self, a, b):
+        self.registers[SP].value -= 1
         pc = self.registers[PC].value
         self.memory[self.registers[SP].value].value = pc
-        self.registers[SP].value -= 1
         self.registers[PC].value = b.value
     
     def run(self, debug=False):
