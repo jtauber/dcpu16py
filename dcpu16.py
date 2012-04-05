@@ -178,7 +178,7 @@ class DCPU16:
             print "[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value, 0x10000)) + "]"
 
 
-if __name__ == "__main__":
+def entry_point(argv):
     example = [
         0x7c01, 0x0030, 0x7de1, 0x1000, 0x0020, 0x7803, 0x1000, 0xc00d,
         0x7dc1, 0x001a, 0xa861, 0x7c01, 0x2000, 0x2161, 0x2000, 0x8463,
@@ -188,3 +188,11 @@ if __name__ == "__main__":
     
     dcpu16 = DCPU16(example)
     dcpu16.run(debug=True)
+
+
+def target(*args):
+    return entry_point, None
+
+
+if __name__ == "__main__":
+    entry_point(None)
