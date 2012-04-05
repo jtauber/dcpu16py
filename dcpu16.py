@@ -33,6 +33,8 @@ class DCPU16:
             Cell(0xFFFF), # SP
             Cell(0x0000), # O
         )
+        
+        self.skip = False
     
     def SET(self, a, b):
         a.value = b.value
@@ -91,16 +93,16 @@ class DCPU16:
         a.value = a.value ^ b.value
     
     def IFE(self, a, b):
-        c = (a.value == b.value)
+        self.skip = not (a.value == b.value)
     
     def IFN(self, a, b):
-        c = (a.value != b.value)
+        self.skip = not (a.value != b.value)
     
     def IFG(self, a, b):
-        c = (a.value > b.value)
+        self.skip = not (a.value > b.value)
     
     def IFB(self, a, b):
-        c = ((a.value & b.value) != 0)
+        self.skip = not ((a.value & b.value) != 0)
     
     def run(self):
         while True:
@@ -187,7 +189,8 @@ class DCPU16:
             else:
                 arg2 = Cell(b % 0x20)
             
-            op(arg1, arg2)
+            if not self.skip:
+                op(arg1, arg2)
     
     def disasm(self):
         while self.registers[PC].value < len(self.memory):
