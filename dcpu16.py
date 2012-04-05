@@ -30,7 +30,7 @@ class DCPU16:
             Cell(0x0000), # I
             Cell(0x0000), # J
             Cell(0x0000), # PC
-            Cell(0xFFFF), # SP
+            Cell(0x0000), # SP
             Cell(0x0000), # O
         )
         
@@ -105,7 +105,7 @@ class DCPU16:
         self.skip = not ((a.value & b.value) != 0)
     
     def JSR(self, a, b):
-        self.registers[SP].value -= 1
+        self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
         pc = self.registers[PC].value
         self.memory[self.registers[SP].value].value = pc
         self.registers[PC].value = b.value
@@ -144,11 +144,11 @@ class DCPU16:
                     arg1 = self.memory[next_word + self.registers[a % 0x10].value]
                 elif a == 0x18:
                     arg1 = self.memory[self.registers[SP].value]
-                    self.registers[SP].value += 1
+                    self.registers[SP].value = (self.registers[SP].value + 1) % 0x10000
                 elif a == 0x19:
                     arg1 = self.memory[self.registers[SP].value]
                 elif a == 0x1A:
-                    self.registers[SP].value -= 1
+                    self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
                     arg1 = self.memory[self.registers[SP].value]
                 elif a == 0x1B:
                     arg1 = self.registers[SP]
@@ -175,11 +175,11 @@ class DCPU16:
                 arg2 = self.memory[next_word + self.registers[b % 0x10].value]
             elif b == 0x18:
                 arg2 = self.memory[self.registers[SP].value]
-                self.registers[SP].value += 1
+                self.registers[SP].value = (self.registers[SP].value + 1) % 0x10000
             elif b == 0x19:
                 arg2 = self.memory[self.registers[SP].value]
             elif b == 0x1A:
-                self.registers[SP].value -= 1
+                self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
                 arg2 = self.memory[self.registers[SP].value]
             elif b == 0x1B:
                 arg2 = self.registers[SP]
@@ -211,7 +211,10 @@ class DCPU16:
             self.registers[i].value) for i in range(11))
     
     def dump_stack(self):
-        print "[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value, 0xFFFF)) + "]"
+        if self.registers[SP].value == 0x0:
+            print "[]"
+        else:
+            print "[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value, 0x10000)) + "]"
     
     def disasm(self):
         while self.registers[PC].value < len(self.memory):
