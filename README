@@ -11,6 +11,11 @@ STATUS
 Runs the example program successfully. Cycle times are not yet taken
 into account but it otherwise should be feature-complete.
 
-I plan to work on an assembler next and possibly a Forth implementation.
+A dissassembler and assembler are also included.
+
+./asm.py example.asm example.obj will assemble Notch's example to object code
+./dcpu16.py example.obj will execute it (currently hard-coded to debug mode)
+
+I plan to work on a Forth implementation soon.
 
 I'm also keen to find out how Notch plans I/O to work.
