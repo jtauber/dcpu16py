@@ -7,9 +7,14 @@ import re
 import sys
 
 
-BASIC_INSTRUCTIONS = r"SET|ADD|SUB|MUL|DIV|MOD|SHL|SHR|AND|BOR|XOR|IFE|IFN|IFG|IFB"
-GENERAL_REGISTERS = r"A|B|C|X|Y|Z|I|J"
-ALL_REGISTERS = r"A|B|C|X|Y|Z|I|J|POP|PEEK|PUSH|SP|PC|O"
+def disjunction(*lst):
+    "make a uppercase/lowercase disjunction out of a list of strings"
+    return "|".join([item.upper() for item in lst] + [item.lower() for item in lst])
+
+
+BASIC_INSTRUCTIONS = disjunction("SET", "ADD", "SUB", "MUL", "DIV", "MOD", "SHL", "SHR", "AND", "BOR", "XOR", "IFE", "IFN", "IFG", "IFB")
+GENERAL_REGISTERS = disjunction("A", "B", "C", "X", "Y", "Z", "I", "J")
+ALL_REGISTERS = disjunction("A", "B", "C", "X", "Y", "Z", "I", "J", "POP", "PEEK", "PUSH", "SP", "PC", "O")
 
 
 def operand_re(prefix):
@@ -60,14 +65,14 @@ OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x
 def handle(token_dict, prefix):
     x = None
     if token_dict[prefix + "register"] is not None:
-        a = IDENTIFIERS[token_dict[prefix + "register"]]
+        a = IDENTIFIERS[token_dict[prefix + "register"].upper()]
     elif token_dict[prefix + "register_indirect"] is not None:
-        a = 0x08 + IDENTIFIERS[token_dict[prefix + "register_indirect"]]
+        a = 0x08 + IDENTIFIERS[token_dict[prefix + "register_indirect"].upper()]
     elif token_dict[prefix + "hex_indexed"] is not None:
-        a = 0x10 + IDENTIFIERS[token_dict[prefix + "hex_indexed_index"]]
+        a = 0x10 + IDENTIFIERS[token_dict[prefix + "hex_indexed_index"].upper()]
         x = int(token_dict[prefix + "hex_indexed"], 16)
     elif token_dict[prefix + "decimal_indexed"] is not None:
-        a = 0x10 + IDENTIFIERS[token_dict[prefix + "decimal_indexed_index"]]
+        a = 0x10 + IDENTIFIERS[token_dict[prefix + "decimal_indexed_index"].upper()]
         x = int(token_dict[prefix + "decimal_indexed"], 16)
     elif token_dict[prefix + "hex_indirect"] is not None:
         a = 0x1E
@@ -127,7 +132,7 @@ for lineno, line in enumerate(open(input_filename), start=1):
         labels[token_dict["label"]] = len(program)
     
     if token_dict["basic"] is not None:
-        o = OPCODES[token_dict["basic"]]
+        o = OPCODES[token_dict["basic"].upper()]
         a, x = handle(token_dict, "op1_")
         b, y = handle(token_dict, "op2_")
     elif token_dict["nonbasic"] is not None:
