@@ -226,12 +226,12 @@ class DCPU16:
                     print("")
                     sys.exit()
                 try:
-                    if not command or command[0] in ("step", "s"):
+                    if not command or command[0] in ("step", "st"):
                         break
                     elif command[0] == "help":
                         help_msg = """Commands:
 help
-s[tep] - (or simply newline) - execute next instruction
+st[ep] - (or simply newline) - execute next instruction
 g[et] <address>|%<register> - (also p[rint]) - print value of memory cell or register
 s[et] <address>|%<register> <value_in_hex> - set value of memory cell or register to <value_in_hex>
 b[reak] <address> [<address2>...] - set breakpoint at given addresses (to be used with 'continue')
