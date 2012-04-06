@@ -26,6 +26,8 @@ import pyparsing as P
 # Run with "DEBUG=1 python ./asm_pyparsing.py"
 DEBUG = "DEBUG" in os.environ
 
+WORD_MAX = 0xFFFF
+
 # otherwise \n is also treated as ignorable whitespace
 P.ParserElement.setDefaultWhitespaceChars(" \t")
 
@@ -76,8 +78,9 @@ datum = quoted_string | numeric_literal
 def parse_data(string, loc, tokens):
     result = []
     for token in tokens:
-        token = datum.parseString(token).asList()
-        result.extend(token)
+        values = datum.parseString(token).asList()
+        assert all(v < WORD_MAX for v in values), "Datum exceeds word size"
+        result.extend(values)
     return result
 
 datalist = P.commaSeparatedList.copy().setParseAction(parse_data)
@@ -123,8 +126,21 @@ OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5,
            "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA,
            "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}
         
-def process_operand(o):
+def process_operand(o, lvalue=False):
+    """
+    Returns
+    """
+    
+    def invalid_op(reason):
+        return RuntimeError("Invalid operand, {0}: {1}"
+                            .format(reason, o.asXML()))
+
+    def check_indirect_register(register):
+        if register not in "ABCXYZIJ":
+            raise invalid_op("only registers A-J can be used for indirection")
+
     if o.basic:
+        # Literals, stack ops, registers
         b = o.basic
         if b.register:
             return IDENTIFIERS[b.register], None
@@ -136,25 +152,30 @@ def process_operand(o):
             l = b.literal
             if not isinstance(l, basestring) and l < 0x20:
                 return 0x20 | l, None
-            assert not l == "", o.asXML()
+            if l == "": raise invalid_op("this is a bug")
+            if isinstance(l, (int, long)) and not 0 <= l <= WORD_MAX:
+                raise invalid_op("literal exceeds word size")
             return 0x1F, l
             
     elif o.indirect:
         i = o.indirect
         if i.basic:
+            # [register], [literal]
             ib = i.basic
             if ib.register:
-                assert ib.register in "ABCXYZIJ"
+                check_indirect_register(ib.register)
                 return 0x8 + IDENTIFIERS[ib.register], None
                 
             elif ib.literal is not None:
                 return 0x1E, ib.literal
             
         elif i.expr:
+            # [register+literal]
             ie = i.expr
-            assert ie.register in "ABCXYZIJ"
+            check_indirect_register(ie.register)
             return 0x10 | IDENTIFIERS[ie.register], ie.literal
-    return None, None
+    
+    raise invalid_op("this is a bug")
 
 def codegen(source, input_filename="<unknown>"):
     
@@ -166,14 +187,16 @@ def codegen(source, input_filename="<unknown>"):
                   .format(input_filename, exc.lineno, exc.col, exc.markInputline()))
         return None
     
-    if DEBUG:
-        from pprint import pprint
-        print(parsed.asXML())
+    log.debug("=====")
+    log.debug("  Successful parse, XML syntax interpretation:")
+    log.debug("=====")
+    log.debug(parsed.asXML())
     
     labels = {}
     program = []
     
-    for line in parsed:
+    for i, line in enumerate(parsed):
+        log.debug("Interpreting element {0}: {1}".format(i, line))
         if line.label:
             labels[line.label] = len(program)
             
