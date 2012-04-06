@@ -50,7 +50,7 @@ class Disassembler:
             else:
                 first = "%s %s" % (INSTRUCTIONS[opcode], self.format_operand(a))
             
-            print "%04x: %s, %s" % (offset, first, self.format_operand(b))
+            print("%04x: %s, %s" % (offset, first, self.format_operand(b)))
 
 
 if __name__ == "__main__":
@@ -67,4 +67,4 @@ if __name__ == "__main__":
         d = Disassembler(program)
         d.run()
     else:
-        print "usage: ./disasm.py <object-file>"
+        print("usage: ./disasm.py <object-file>")

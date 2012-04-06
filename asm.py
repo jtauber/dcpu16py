@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
+import struct
 import re
 import sys
 
@@ -95,13 +97,21 @@ if len(sys.argv) == 3:
     input_filename = sys.argv[1]
     output_filename = sys.argv[2]
 else:
-    print "usage: ./asm.py <input.asm> <output.obj>"
+    print("usage: ./asm.py <input.asm> <output.obj>")
     sys.exit(1)
 
-for line in open(input_filename):
-    token_dict = line_regex.match(line).groupdict()
+def report_error(filename, lineno, error):
+    print("%s:%i: %s" % (input_filename, lineno, error), file=sys.stderr)
+
+for lineno, line in enumerate(open(input_filename), start=1):
+    mo = line_regex.match(line)
+    if mo is None:
+        report_error(input_filename, lineno, "Syntax error")
+        break
+
+    token_dict = mo.groupdict()
     if token_dict is None:
-        print "syntax error: %s" % line
+        report_error(input_filename, lineno, "Syntax error")
         break
     
     if token_dict["label"]:
@@ -244,5 +254,4 @@ with open(output_filename, "wb") as f:
         if isinstance(word, str):
             word = labels[word]
         hi, lo = divmod(word, 0x100)
-        f.write(chr(hi))
-        f.write(chr(lo))
+        f.write(struct.pack("BB", hi, lo))
