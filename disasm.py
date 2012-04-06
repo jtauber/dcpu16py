@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import struct
 import sys
 
 
@@ -58,11 +59,10 @@ if __name__ == "__main__":
         program = []
         f = open(sys.argv[1])
         while True:
-            hi = f.read(1)
-            if not hi:
+            word = f.read(2)
+            if not word:
                 break
-            lo = f.read(1)
-            program.append((ord(hi) << 8) + ord(lo))
+            program.append(struct.unpack(">H", word)[0])
         
         d = Disassembler(program)
         d.run()
