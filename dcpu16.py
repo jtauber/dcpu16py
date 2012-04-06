@@ -32,7 +32,7 @@ class DCPU16:
         self.skip = False
         self.cycle = 0
 
-        self.debugger_breaks = []
+        self.debugger_breaks = set()
         self.debugger_in_continue = False
         
         self.opcodes = {}
@@ -235,7 +235,13 @@ class DCPU16:
                     elif command[0] in ("set", "s"):
                         self.debugger_set(*command[1:])
                     elif command[0] in ("break", "b"):
+                        if len(command) < 2:
+                            raise ValueError("Break command takes at least 1 parameter!")
                         self.debugger_break(*command[1:])
+                    elif command[0] in ("clear", "cl"):
+                        if len(command) < 2:
+                            raise ValueError("Clear command takes at least 1 parameter!")
+                        self.debugger_clear(*command[1:])
                     elif command[0] in ("continue", "cont", "c"):
                         self.debugger_in_continue = True
                         break
@@ -263,13 +269,22 @@ class DCPU16:
             return addr
 
     def debugger_break(self, *addrs):
-        breaks = []
+        breaks = set()
         for addr in addrs:
             addr = int(addr, 16)
             if not 0 <= addr <= 0xFFFF:
                 raise ValueError("Invalid address!")
-            breaks.append(addr)
-        self.debugger_breaks += breaks
+            breaks.add(addr)
+        self.debugger_breaks.update(breaks)
+
+    def debugger_clear(self, *addrs):
+        breaks = set()
+        for addr in addrs:
+            addr = int(addr, 16)
+            if not 0 <= addr <= 0xFFFF:
+                raise ValueError("Invalid address!")
+            breaks.add(addr)
+        self.debugger_breaks.difference_update(breaks)
 
     def debugger_set(self, what, value):
         value = int(value, 16)
