@@ -31,7 +31,8 @@ class DCPU16:
         self.memory = [Cell(memory[i]) if i < len(memory) else Cell() for i in range(0x10000)]
         self.registers = tuple(Cell() for _ in range(30))
         self.skip = False
-
+        self.cycle = 0
+        
         self.opcodes = {}
         for name, value in inspect.getmembers(self):
             if inspect.ismethod(value) and getattr(value, "_is_opcode", False):
@@ -40,24 +41,28 @@ class DCPU16:
     @opcode(0x01)
     def SET(self, a, b):
         a.value = b.value
+        self.cycle += 1
     
     @opcode(0x02)
     def ADD(self, a, b):
         o, r = divmod(a.value + b.value, 0x10000)
         self.registers[O].value = o
         a.value = r
+        self.cycle += 2
     
     @opcode(0x03)
     def SUB(self, a, b):
         o, r = divmod(a.value - b.value, 0x10000)
         self.registers[O].value = 0xFFFF if o == -1 else 0x0000
         a.value = r
+        self.cycle += 2
     
     @opcode(0x04)
     def MUL(self, a, b):
         o, r = divmod(a.value * b.value, 0x10000)
         a.value = r
         self.registers[O].value = o % 0x10000
+        self.cycle += 2
     
     @opcode(0x05)
     def DIV(self, a, b):
@@ -69,6 +74,7 @@ class DCPU16:
             o = ((a.value << 16) / b.value) % 0x10000
         a.value = r
         self.registers[O].value = o
+        self.cycle += 3
     
     @opcode(0x06)
     def MOD(self, a, b):
@@ -77,6 +83,7 @@ class DCPU16:
         else:
             r = a.value % b.value
         a.value = r
+        self.cycle += 3
     
     @opcode(0x07)
     def SHL(self, a, b):
@@ -84,6 +91,7 @@ class DCPU16:
         o = ((a.value << b.value) >> 16) % 0x10000
         a.value = r
         self.registers[O].value = o
+        self.cycle += 2
     
     @opcode(0x08)
     def SHR(self, a, b):
@@ -91,34 +99,42 @@ class DCPU16:
         o = ((a.value << 16) >> b.value) % 0x10000
         a.value = r
         self.registers[O].value = o
+        self.cycle += 2
     
     @opcode(0x09)
     def AND(self, a, b):
         a.value = a.value & b.value
+        self.cycle += 1
     
     @opcode(0x0a)
     def BOR(self, a, b):
         a.value = a.value | b.value
+        self.cycle += 1
     
     @opcode(0x0b)
     def XOR(self, a, b):
         a.value = a.value ^ b.value
+        self.cycle += 1
     
     @opcode(0x0c)
     def IFE(self, a, b):
         self.skip = not (a.value == b.value)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x0d)
     def IFN(self, a, b):
         self.skip = not (a.value != b.value)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x0e)
     def IFG(self, a, b):
         self.skip = not (a.value > b.value)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x0f)
     def IFB(self, a, b):
         self.skip = not ((a.value & b.value) != 0)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x010)
     def JSR(self, a, b):
@@ -126,6 +142,7 @@ class DCPU16:
         pc = self.registers[PC].value
         self.memory[self.registers[SP].value].value = pc
         self.registers[PC].value = b.value
+        self.cycle += 2
     
     def get_operand(self, a):
         if a < 0x08 or 0x1B <= a <= 0x1D:
@@ -136,6 +153,7 @@ class DCPU16:
             next_word = self.memory[self.registers[PC].value].value
             self.registers[PC].value += 1
             arg1 = self.memory[next_word + self.registers[a % 0x10].value]
+            self.cycle += 1
         elif a == 0x18:
             arg1 = self.memory[self.registers[SP].value]
             self.registers[SP].value = (self.registers[SP].value + 1) % 0x10000
@@ -147,9 +165,11 @@ class DCPU16:
         elif a == 0x1E:
             arg1 = self.memory[self.memory[self.registers[PC].value].value]
             self.registers[PC].value += 1
+            self.cycle += 1
         elif a == 0x1F:
             arg1 = self.memory[self.registers[PC].value]
             self.registers[PC].value += 1
+            self.cycle += 1
         else:
             arg1 = Cell(a % 0x20)
         
@@ -165,7 +185,7 @@ class DCPU16:
             b, a = divmod(operands, 64)
             
             if debug:
-                print("%04X: %04X" % (pc, w))
+                print("(%08X) %04X: %04X" % (self.cycle, pc, w))
             
             if opcode == 0x00:
                 arg1 = None
