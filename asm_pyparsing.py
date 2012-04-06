@@ -19,11 +19,11 @@ label = P.Combine(P.Literal(":").suppress() + identifier)
 
 comment = P.Literal(";").suppress() + P.restOfLine
 
-register = (P.Word("ABCXYZIJO", max=1, asKeyword=True) | 
-            P.Keyword("PC") | 
-            P.Keyword("SP"))
+register = (P.Or(P.CaselessKeyword(x) for x in "ABCIJXYZO") |
+            P.CaselessKeyword("PC") |
+            P.CaselessKeyword("SP")).addParseAction(P.upcaseTokens)
 
-stack_op = P.Keyword("PEEK") | P.Keyword("POP") | P.Keyword("PUSH")
+stack_op = P.CaselessKeyword("PEEK") | P.CaselessKeyword("POP") | P.CaselessKeyword("PUSH")
 
 hex_literal = P.Combine(P.Literal("0x") + P.Word(P.hexnums))
 dec_literal = P.Word(P.nums)
@@ -33,9 +33,13 @@ dec_literal.setParseAction(lambda s, l, t: int(t[0]))
 
 literal = hex_literal | dec_literal | identifier
 
-instruction = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB JSR")
+instruction = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB JSR", caseless=True)
 basic_operand = P.Group(register("register") | stack_op("stack_op") | literal("literal"))
 indirect_expr = P.Group(literal("literal") + P.Literal("+") + register("register"))
+
+register.addParseAction(P.upcaseTokens)
+stack_op.addParseAction(P.upcaseTokens)
+instruction.addParseAction(P.upcaseTokens)
 
 indirection = P.Group(
     (P.Literal("[").suppress() +
