@@ -216,8 +216,6 @@ class DCPU16:
                 self.debugger_prompt()
 
     def debugger_prompt(self):
-        print(self.memory[PC])
-        print(self.debugger_breaks)
         if not self.debugger_in_continue or self.memory[PC] in self.debugger_breaks:
             self.debugger_in_continue = False
             while True:
@@ -264,11 +262,14 @@ class DCPU16:
                 raise ValueError("Invalid address!")
             return addr
 
-    def debugger_break(self, addr):
-        addr = int(addr, 16)
-        if not 0 <= addr <= 0xFFFF:
-            raise ValueError("Invalid address!")
-        self.debugger_breaks.append(addr)
+    def debugger_break(self, *addrs):
+        breaks = []
+        for addr in addrs:
+            addr = int(addr, 16)
+            if not 0 <= addr <= 0xFFFF:
+                raise ValueError("Invalid address!")
+            breaks.append(addr)
+        self.debugger_breaks += breaks
 
     def debugger_set(self, what, value):
         value = int(value, 16)
