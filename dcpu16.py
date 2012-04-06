@@ -181,7 +181,7 @@ class DCPU16:
             arg1 = self.memory[arg1]
         return arg1
     
-    def run(self, debug=False):
+    def run(self, debug=False, trace=False):
         while True:
             pc = self.memory[PC]
             w = self.memory[pc]
@@ -190,7 +190,7 @@ class DCPU16:
             operands, opcode = divmod(w, 16)
             b, a = divmod(operands, 64)
             
-            if debug:
+            if trace:
                 print("(%08X) %04X: %04X" % (self.cycle, pc, w))
             
             if opcode == 0x00:
@@ -203,12 +203,12 @@ class DCPU16:
             arg2 = self.get_operand(b, dereference=True)
             
             if self.skip:
-                if debug:
+                if trace:
                     print("skipping")
                 self.skip = False
             else:
                 op(arg1, arg2)
-                if debug:
+                if trace:
                     self.dump_registers()
                     self.dump_stack()
 
@@ -325,9 +325,12 @@ Close emulator with Ctrl-D
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DCPU-16 emulator")
-    parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode")
+    parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode. This implies '--trace'")
+    parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
     parser.add_argument("object_file", help="File with assembled DCPU binary")
     args = parser.parse_args()
+    if args.debug:
+        args.trace = True
     
     program = []
     with open(args.object_file, "rb") as f:
@@ -337,4 +340,4 @@ if __name__ == "__main__":
             word = f.read(2)
     
     dcpu16 = DCPU16(program)
-    dcpu16.run(debug=args.debug)
+    dcpu16.run(debug=args.debug, trace=args.trace)
