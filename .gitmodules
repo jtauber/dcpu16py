@@ -1,0 +1,3 @@
+[submodule "examples"]
+	path = examples
+	url = git://github.com/jtauber/DCPU-16-Examples.git
