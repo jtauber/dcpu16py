@@ -253,4 +253,4 @@ with open(output_filename, "wb") as f:
     for word in program:
         if isinstance(word, str):
             word = labels[word]
-        f.write(struct.pack(">H", hi, lo))
+        f.write(struct.pack(">H", word))
