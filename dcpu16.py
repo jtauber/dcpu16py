@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 
-import sys
 import inspect
+import struct
+import sys
 
 # offsets into DCPU16.memory corresponding to addressing mode codes
 SP, PC, O = 0x1001B, 0x1001C, 0x1001D
