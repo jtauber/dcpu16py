@@ -3,10 +3,13 @@
 pyparsing based grammar for DCPU-16 0x10c assembler
 """
 
+from itertools import izip_longest
+
 import argparse
 import os
 
 import pyparsing as P
+
 
 # Run with "DEBUG=1 python ./asm_pyparsing.py"
 DEBUG = "DEBUG" in os.environ
@@ -31,7 +34,9 @@ dec_literal = P.Word(P.nums)
 hex_literal.setParseAction(lambda s, l, t: int(t[0], 16))
 dec_literal.setParseAction(lambda s, l, t: int(t[0]))
 
-literal = hex_literal | dec_literal | identifier
+numeric_literal = hex_literal | dec_literal
+literal = numeric_literal | identifier
+
 
 instruction = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB JSR", caseless=True)
 basic_operand = P.Group(register("register") | stack_op("stack_op") | literal("literal"))
@@ -47,10 +52,30 @@ indirection = P.Group(
      P.Literal("]").suppress()))
 operand = basic_operand("basic") | indirection("indirect")
 
-statement = (instruction("instruction") + 
-             P.Group(operand)("first") + 
-             P.Optional(P.Literal(",").suppress() + P.Group(operand)("second"))
-            )
+def make_words(data):
+    return [a << 8 | b for a, b in izip_longest(data[::2], data[1::2],
+                                                  fillvalue=0)]
+def wordize_string(s, l, tokens):
+    return make_words([ord(c) for c in tokens.string])
+
+quoted_string = P.quotedString("string").addParseAction(P.removeQuotes).addParseAction(wordize_string)
+datum = quoted_string | numeric_literal
+def parse_data(string, loc, tokens):
+    result = []
+    for token in tokens:
+        token = datum.parseString(token).asList()
+        result.extend(token)
+    return result
+
+datalist = P.commaSeparatedList.copy().setParseAction(parse_data)
+data = P.CaselessKeyword("DAT")("instruction") + P.Group(datalist)("data")
+
+statement = P.Group(
+    (instruction("instruction") +
+     P.Group(operand)("first") +
+     P.Optional(P.Literal(",").suppress() + P.Group(operand)("second"))
+    ) | data
+)
 
 line = (P.Optional(label("label")) + 
         P.Optional(statement("statement"), default=None) +
@@ -135,6 +160,10 @@ def codegen(source):
             
         s = line.statement
         if not s: continue
+        
+        if s.instruction == "DAT":
+            program.extend(s.data)
+            continue
         
         if s.instruction == "JSR":
             o = 0x00
