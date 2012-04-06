@@ -46,10 +46,11 @@ register.addParseAction(P.upcaseTokens)
 stack_op.addParseAction(P.upcaseTokens)
 instruction.addParseAction(P.upcaseTokens)
 
+indirection_content = (indirect_expr("expr") | basic_operand("basic"))
 indirection = P.Group(
-    (P.Literal("[").suppress() +
-     (indirect_expr("expr") | basic_operand("basic")) + 
-     P.Literal("]").suppress()))
+    (P.Literal("[").suppress() + indirection_content + P.Literal("]").suppress())
+  | (P.Literal("(").suppress() + indirection_content + P.Literal(")").suppress())
+     )
 operand = basic_operand("basic") | indirection("indirect")
 
 def make_words(data):
