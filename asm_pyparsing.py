@@ -197,8 +197,7 @@ def codegen(source):
     # Turn words into bytes
     result = bytes()
     for word in program:
-        hi, lo = divmod(word, 0x100)
-        result += struct.pack("BB", hi, lo)
+        result += struct.pack(">H", word)
     return result
 
 def main():
