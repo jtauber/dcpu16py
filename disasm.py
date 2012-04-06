@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import struct
 import sys
+import argparse
 
 
 INSTRUCTIONS = [None, "SET", "ADD", "SUB", "MUL", "DIV", "MOD", "SHL", "SHR", "AND", "BOR", "XOR", "IFE", "IFN", "IFG", "IFB"]
@@ -10,9 +13,10 @@ IDENTIFERS = ["A", "B", "C", "X", "Y", "Z", "I", "J", "POP", "PEEK", "PUSH", "SP
 
 class Disassembler:
     
-    def __init__(self, program):
+    def __init__(self, program, output=sys.stdout):
         self.program = program
         self.offset = 0
+        self.output = output
     
     def next_word(self):
         w = self.program[self.offset]
@@ -56,19 +60,22 @@ class Disassembler:
         
     def run(self):
         while self.offset < len(self.program):
-            print(self.next_instruction())
+            print(self.next_instruction(), file=self.output)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        program = []
-        f = open(sys.argv[1], "rb")
+    parser = argparse.ArgumentParser(description="DCPU-16 disassembler")
+    parser.add_argument("-o", help="Place the output into FILE instead of stdout", metavar="FILE")
+    parser.add_argument("input", help="File with DCPU object code")
+    args = parser.parse_args()
+    
+    program = []
+    f = open(args.input, "rb")
+    word = f.read(2)
+    while word:
+        program.append(struct.unpack(">H", word)[0])
         word = f.read(2)
-        while word:
-            program.append(struct.unpack(">H", word)[0])
-            word = f.read(2)
-        
-        d = Disassembler(program)
-        d.run()
-    else:
-        print("usage: ./disasm.py <object-file>")
+    
+    output = sys.stdout if args.o is None else open(args.o, "w")
+    d = Disassembler(program, output=output)
+    d.run()

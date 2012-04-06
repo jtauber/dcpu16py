@@ -5,6 +5,7 @@ from __future__ import print_function
 import struct
 import re
 import sys
+import argparse
 
 
 def disjunction(*lst):
@@ -84,9 +85,10 @@ ADDR_MAP = {
     "decimal_indirect":      lambda t,v: (0x1E, int(t)),
     "hex_literal":           lambda t,v: clamped_value(int(t, 16)),
     "decimal_literal":       lambda t,v: clamped_value(int(t)),
-    "label_indirect":        lambda t,v: (0x1E, t)
-    "label":                 lambda t,v: (0x1F, t)
-    }
+    "label_indirect":        lambda t,v: (0x1E, t),
+    "label":                 lambda t,v: (0x1F, t),
+}
+
 
 def handle(token_dict, prefix):
     token = [t for t in token_dict.keys() if t.startswith(prefix) and token_dict[t] is not None][0]
@@ -95,62 +97,59 @@ def handle(token_dict, prefix):
     return ADDR_MAP[suffix](token_dict[token], v)
 
 
-program = []
-labels = {}
-
-
-if len(sys.argv) == 3:
-    input_filename = sys.argv[1]
-    output_filename = sys.argv[2]
-else:
-    print("usage: ./asm.py <input.asm> <output.obj>")
-    sys.exit(1)
-
-
 def report_error(filename, lineno, error):
-    print("%s:%i: %s" % (input_filename, lineno, error), file=sys.stderr)
-    sys.exit(1)
+    print("%s:%i: %s" % (filename, lineno, error), file=sys.stderr)
 
 
-for lineno, line in enumerate(open(input_filename), start=1):
-    mo = line_regex.match(line)
-    if mo is None:
-        report_error(input_filename, lineno, "Syntax error")
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="DCPU-16 assembler")
+    parser.add_argument("-o", default="a.obj", help="Place the output into FILE", metavar="FILE")
+    parser.add_argument("input", help="File with DCPU assembly code")
+    args = parser.parse_args()
     
-    token_dict = mo.groupdict()
-    if token_dict is None:
-        report_error(input_filename, lineno, "Syntax error")
+    program = []
+    labels = {}
     
-    if token_dict["label"] is not None:
-        labels[token_dict["label"]] = len(program)
+    for lineno, line in enumerate(open(args.input), start=1):
+        mo = line_regex.match(line)
+        if mo is None:
+            report_error(args.input, lineno, "Syntax error")
+            break
+        
+        token_dict = mo.groupdict()
+        if token_dict is None:
+            report_error(args.input, lineno, "Syntax error")
+            break
+        
+        if token_dict["label"] is not None:
+            labels[token_dict["label"]] = len(program)
+        
+        o = x = y = None
+        if token_dict["basic"] is not None:
+            o = OPCODES[token_dict["basic"].upper()]
+            a, x = handle(token_dict, "op1_")
+            b, y = handle(token_dict, "op2_")
+        elif token_dict["nonbasic"] is not None:
+            o, a = 0x00, 0x01
+            b, y = handle(token_dict, "op3_")
+        elif token_dict["data"] is not None:
+            for datum in re.findall("""("[^"]*"|0x[0-9A-Fa-f]{1,4}|\d+)""", token_dict["data"]):
+                if datum.startswith("\""):
+                    program.extend(ord(ch) for ch in datum[1:-1])
+                elif datum.startswith("0x"):
+                    program.append(int(datum[2:], 16))
+                else:
+                    program.append(int(datum))
+        
+        if o is not None:
+            program.append(((b << 10) + (a << 4) + o))
+        if x is not None:
+            program.append(x)
+        if y is not None:
+            program.append(y)
     
-    o = x = y = None
-    if token_dict["basic"] is not None:
-        o = OPCODES[token_dict["basic"].upper()]
-        a, x = handle(token_dict, "op1_")
-        b, y = handle(token_dict, "op2_")
-    elif token_dict["nonbasic"] is not None:
-        o, a = 0x00, 0x01
-        b, y = handle(token_dict, "op3_")
-    elif token_dict["data"] is not None:
-        for datum in re.findall("""("[^"]*"|0x[0-9A-Fa-f]{1,4}|\d+)""", token_dict["data"]):
-            if datum.startswith("\""):
-                program.extend(ord(ch) for ch in datum[1:-1])
-            elif datum.startswith("0x"):
-                program.append(int(datum[2:], 16))
-            else:
-                program.append(int(datum))
-    
-    if o is not None:
-        program.append(((b << 10) + (a << 4) + o))
-    if x is not None:
-        program.append(x)
-    if y is not None:
-        program.append(y)
-
-
-with open(output_filename, "wb") as f:
-    for word in program:
-        if isinstance(word, str):
-            word = labels[word]
-        f.write(struct.pack(">H", word))
+    with open(args.o, "wb") as f:
+        for word in program:
+            if isinstance(word, str):
+                word = labels[word]
+            f.write(struct.pack(">H", word))
