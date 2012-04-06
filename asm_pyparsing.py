@@ -13,6 +13,9 @@ try:
 except NameError:
     basestring = str
 
+import logging; log = logging.getLogger("dcpu16_asm")
+log.setLevel(logging.DEBUG)
+
 import argparse
 import struct
 import os
@@ -96,22 +99,22 @@ full_grammar = P.stringStart + P.OneOrMore(P.Group(line)) + P.stringEnd
 
 
 if DEBUG:
-    identifier.setName("identifier").setDebug()
-    label.setName("label")
-    comment.setName("comment")
-    register.setName("register").setDebug()
-    stack_op.setName("stack_op").setDebug()
-    hex_literal.setName("hex_literal").setDebug()
-    dec_literal.setName("dec_literal").setDebug()
-    literal.setName("literal").setDebug()
-    instruction.setName("instruction").setDebug()
-    basic_operand.setName("basic_operand").setDebug()
-    indirect_expr.setName("indirect_expr").setDebug()
-    indirection.setName("indirection").setDebug()
-    operand.setName("operand").setDebug()
-    statement.setName("statement").setDebug()
-    line.setName("line").setDebug()
-    full_grammar.setName("program").setDebug()
+    # Turn setdebug on for all parse elements
+    for name, var in locals().copy().items():
+        if isinstance(var, P.ParserElement):
+            var.setName(name).setDebug()
+    def debug_line(string, location, tokens):
+        """
+        Show the current line number and content being parsed
+        """
+        lineno = string[:location].count("\n")
+        remaining = string[location:]
+        line_end = remaining.index("\n") if "\n" in remaining else None
+        log.debug("====")
+        log.debug("  Parse line {0}".format(lineno))
+        log.debug("  '{0}'".format(remaining[:line_end]))
+        log.debug("====")
+    line.setDebugActions(debug_line, None, None)
 
 IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5,
                "I": 0x6, "J": 0x7, "POP": 0x18, "PEEK": 0x19, "PUSH": 0x1A,
@@ -153,9 +156,15 @@ def process_operand(o):
             return 0x10 | IDENTIFIERS[ie.register], ie.literal
     return None, None
 
-def codegen(source):
+def codegen(source, input_filename="<unknown>"):
     
-    parsed = full_grammar.parseString(source)
+    try:
+        parsed = full_grammar.parseString(source)
+    except P.ParseException as exc:
+        log.fatal("Parse error:")
+        log.fatal("  {0}:{1}:{2} HERE {3}"
+                  .format(input_filename, exc.lineno, exc.col, exc.markInputline()))
+        return None
     
     if DEBUG:
         from pprint import pprint
@@ -211,14 +220,30 @@ def main():
         help='file path where to store the binary code')
     args = parser.parse_args()
     
+    if not log.handlers:
+        from sys import stderr
+        handler = logging.StreamHandler(stderr)
+        log.addHandler(handler)
+        if not DEBUG: handler.setLevel(logging.INFO)
+    
     with open(args.source) as fd:
-        program = codegen(fd.read())
-        
+        program = codegen(fd.read(), args.source)
+    
+    if program is None:
+        log.fatal("No program produced.")
+        if not DEBUG:
+            log.fatal("Run with DEBUG=1 ./asm_pyparsing.py for more information.")
+        return 1
+    
     if not args.destination:
         print(program)
     else:
         with open(args.destination, "wb") as fd:
             fd.write(program)
+        log.info("Program written to {0} ({1} bytes, hash={2})"
+                 .format(args.destination, len(program), hex(abs(hash(program)))))
+            
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
