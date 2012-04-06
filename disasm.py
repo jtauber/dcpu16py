@@ -49,9 +49,9 @@ class Disassembler:
                 else:
                     continue
             else:
-                first = "%s %s" % (INSTRUCTIONS[opcode], self.format_operand(a))
+                first = "%s %s," % (INSTRUCTIONS[opcode], self.format_operand(a))
             
-            asm = "%s, %s" % (first, self.format_operand(b))
+            asm = "%s %s" % (first, self.format_operand(b))
             binary = " ".join("%04x" % word for word in self.program[offset:self.offset])
             print("%-40s ; %04x: %s" % (asm, offset, binary))
 
