@@ -217,17 +217,35 @@ class DCPU16:
                         # Ctrl-D
                         print("")
                         sys.exit()
-                    if not command or command[0] in ("step", "s"):
-                        break
-                    elif command[0] in ("get", "g", "print", "p"):
-                        addr = int(command[1], 16)
-                        if not 0 <= addr <= 0xFFFF:
-                            print("Invalid address!")
-                            continue
-                        value = self.memory[addr]
-                        print("hex: {hex}\ndec: {dec}\nbin: {bin}".format(hex=hex(value), dec=value, bin=bin(value)))
-                    else:
-                        print("Invalid command!")
+                    try:
+                        if not command or command[0] in ("step", "s"):
+                            break
+                        elif command[0] == "help":
+                            print("Commands:\n\thelp\n\tstep\n\tget <addr>\n\tset <addr> <value>")
+                        elif command[0] in ("get", "g", "print", "p"):
+                            self.debugger_get(*command[1:])
+                        elif command[0] in ("set", "s"):
+                            self.debugger_set(*command[1:])
+                        else:
+                            raise ValueError("Invalid command!")
+                    except ValueError as ex:
+                        print(ex)
+
+    def debugger_set(self, what, value):
+        addr = int(what, 16)
+        if not 0 <= addr <= 0xFFFF:
+            raise ValueError("Invalid address!")
+        value = int(value, 16)
+        if not 0 <= value <= 0xFFFF:
+            raise ValueError("Invalid value!")
+        self.memory[addr] = value
+
+    def debugger_get(self, what):
+        addr = int(what, 16)
+        if not 0 <= addr <= 0xFFFF:
+            raise ValueError("Invalid address!")
+        value = self.memory[addr]
+        print("hex: {hex}\ndec: {dec}\nbin: {bin}".format(hex=hex(value), dec=value, bin=bin(value)))
     
     def dump_registers(self):
         print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
