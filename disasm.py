@@ -57,12 +57,11 @@ class Disassembler:
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         program = []
-        f = open(sys.argv[1])
-        while True:
-            word = f.read(2)
-            if not word:
-                break
+        f = open(sys.argv[1], "rb")
+        word = f.read(2)
+        while word:
             program.append(struct.unpack(">H", word)[0])
+            word = f.read(2)
         
         d = Disassembler(program)
         d.run()
