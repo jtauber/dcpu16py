@@ -4,6 +4,7 @@
 import inspect
 import struct
 import sys
+import argparse
 
 # offsets into DCPU16.memory corresponding to addressing mode codes
 SP, PC, O = 0x1001B, 0x1001C, 0x1001D
@@ -223,15 +224,17 @@ class DCPU16:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        program = []
-        f = open(sys.argv[1], "rb")
+    parser = argparse.ArgumentParser(description="DCPU-16 emulator")
+    parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode")
+    parser.add_argument("object_file", help="File with assembled DCPU binary")
+    args = parser.parse_args()
+    
+    program = []
+    with open(args.object_file, "rb") as f:
         word = f.read(2)
         while word:
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
-        
-        dcpu16 = DCPU16(program)
-        dcpu16.run(debug=False)
-    else:
-        print("usage: ./dcpu16.py <object-file>")
+    
+    dcpu16 = DCPU16(program)
+    dcpu16.run(debug=args.debug)
