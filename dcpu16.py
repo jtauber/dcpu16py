@@ -16,12 +16,12 @@ class Cell:
 PC, SP, O = 8, 9, 10
 
 def opcode(code):
-    '''A decorator for opcodes'''
+    """A decorator for opcodes"""
     def decorator(func):
-        setattr(func, '_is_opcode', True)
-        setattr(func, '_opcode', code)
+        setattr(func, "_is_opcode", True)
+        setattr(func, "_opcode", code)
         return func
-
+    
     return decorator
 
 
@@ -34,8 +34,8 @@ class DCPU16:
 
         self.opcodes = {}
         for name, value in inspect.getmembers(self):
-            if inspect.ismethod(value) and getattr(value, '_is_opcode', False):
-                self.opcodes[getattr(value, '_opcode')] = value 
+            if inspect.ismethod(value) and getattr(value, "_is_opcode", False):
+                self.opcodes[getattr(value, "_opcode")] = value 
     
     @opcode(0x01)
     def SET(self, a, b):
