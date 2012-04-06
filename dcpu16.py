@@ -231,19 +231,34 @@ class DCPU16:
                     except ValueError as ex:
                         print(ex)
 
+    @staticmethod
+    def debugger_parse_location(what):
+        registers = "abcxyzij"
+        specials = ("pc", "sp", "o")
+        if what.startswith("%"):
+            what = what[1:]
+            if what in registers:
+                return  0x10000 + registers.find(what)
+            elif what in specials:
+                return  (PC, SP, O)[specials.index(what)]
+            else:
+                raise ValueError("Invalid register!")
+        else:
+            addr = int(what, 16)
+            if not 0 <= addr <= 0xFFFF:
+                raise ValueError("Invalid address!")
+            return addr
+
+
     def debugger_set(self, what, value):
-        addr = int(what, 16)
-        if not 0 <= addr <= 0xFFFF:
-            raise ValueError("Invalid address!")
         value = int(value, 16)
         if not 0 <= value <= 0xFFFF:
             raise ValueError("Invalid value!")
+        addr = self.debugger_parse_location(what)
         self.memory[addr] = value
 
     def debugger_get(self, what):
-        addr = int(what, 16)
-        if not 0 <= addr <= 0xFFFF:
-            raise ValueError("Invalid address!")
+        addr = self.debugger_parse_location(what)
         value = self.memory[addr]
         print("hex: {hex}\ndec: {dec}\nbin: {bin}".format(hex=hex(value), dec=value, bin=bin(value)))
     
