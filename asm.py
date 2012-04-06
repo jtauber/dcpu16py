@@ -54,6 +54,10 @@ line_regex = re.compile(r"""^\s*
             (?P<nonbasic>JSR|jsr) # non-basic instruction
             \s+""" + operand_re("op3_") + """
         )
+        |(
+            (DAT|dat) # data
+            \s+(?P<data>("[^"]*"|0x[0-9A-Fa-f]{1,4}|\d+)(,\s*("[^"]*"|0x[0-9A-Fa-f]{1,4}|\d+))*)
+        )
     )?
     \s*
     (?P<comment>;.*)? # comment
@@ -143,6 +147,15 @@ for lineno, line in enumerate(open(input_filename), start=1):
     elif token_dict["nonbasic"] is not None:
         o, a, x = 0x00, 0x01, None
         b, y = handle(token_dict, "op3_")
+    elif token_dict["data"] is not None:
+        o = None
+        for datum in re.findall("""("[^"]*"|0x[0-9A-Fa-f]{1,4}|\d+)""", token_dict["data"]):
+            if datum.startswith("\""):
+                program.extend(ord(ch) for ch in datum[1:-1])
+            elif datum.startswith("0x"):
+                program.append(int(datum[2:], 16))
+            else:
+                program.append(int(datum))
     else: # blank line or comment-only
         o = x = y = None
     
