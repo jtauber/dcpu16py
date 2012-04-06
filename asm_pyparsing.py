@@ -3,8 +3,10 @@
 pyparsing based grammar for DCPU-16 0x10c assembler
 """
 
-import pyparsing as P
+import argparse
 import os
+
+import pyparsing as P
 
 # Run with "DEBUG=1 python ./asm_pyparsing.py"
 DEBUG = "DEBUG" in os.environ
@@ -158,9 +160,24 @@ def codegen(source):
     return "".join(chr(c) for c in result)
 
 def main():
-    p = codegen(open("example.asm").read())
-    with open("output.bin", "w") as fd:
-        fd.write(p)
+    parser = argparse.ArgumentParser(
+        description='A simple pyparsing-based DCPU assembly compiler')
+    parser.add_argument(
+        'source', metavar='IN', type=str,
+        help='file path of the file containing the assembly code')
+    parser.add_argument(
+        'destination', metavar='OUT', type=str, nargs='?',
+        help='file path where to store the binary code')
+    args = parser.parse_args()
+    
+    with open(args.source) as fd:
+        program = codegen(fd.read())
+        
+    if not args.destination:
+        print program
+    else:
+        with open(args.destination, "w") as fd:
+            fd.write(program)
 
 if __name__ == "__main__":
     main()
