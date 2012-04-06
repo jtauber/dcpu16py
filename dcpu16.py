@@ -6,6 +6,11 @@ import struct
 import sys
 import argparse
 
+try:
+    raw_input
+except NameError:
+    raw_input = input
+
 # offsets into DCPU16.memory corresponding to addressing mode codes
 SP, PC, O = 0x1001B, 0x1001C, 0x1001D
 
@@ -203,6 +208,26 @@ class DCPU16:
                 if debug:
                     self.dump_registers()
                     self.dump_stack()
+
+            if debug:
+                while True:
+                    try:
+                        command = [s.lower() for s in raw_input("debug> ").split()]
+                    except EOFError:
+                        # Ctrl-D
+                        print("")
+                        sys.exit()
+                    if not command or command[0] in ("step", "s"):
+                        break
+                    elif command[0] in ("get", "g", "print", "p"):
+                        addr = int(command[1], 16)
+                        if not 0 <= addr <= 0xFFFF:
+                            print("Invalid address!")
+                            continue
+                        value = self.memory[addr]
+                        print("hex: {hex}\ndec: {dec}\nbin: {bin}".format(hex=hex(value), dec=value, bin=bin(value)))
+                    else:
+                        print("Invalid command!")
     
     def dump_registers(self):
         print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
