@@ -1,6 +1,6 @@
 class Terminal:
     
-    def update_memory(self, address, value):
+    def update_character(self, row, column, character, color=None):
         pass
     
     def show(self):

@@ -1,13 +1,12 @@
-START_ADDRESS = 0x8000
 WIDTH = 32
 HEIGHT = 16
 
 class Terminal:
+    width = WIDTH
+    height = HEIGHT
     
-    def update_memory(self, address, value):
-        if START_ADDRESS <= address <= START_ADDRESS + WIDTH * HEIGHT * 2:
-            row, column = divmod(address - START_ADDRESS, WIDTH)
-            print("TERMINAL %04X: %04X (%d,%d:%s)" % (address, value, column, row, chr(value % 0x80)))
+    def update_character(self, row, column, character, color=None):
+        print("TERMINAL (%d,%d:'%s') %s" % (column, row, chr(character), str(color)))
     
     def show(self):
         pass

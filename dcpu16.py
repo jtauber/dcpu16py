@@ -6,7 +6,7 @@ import inspect
 import struct
 import sys
 import time
-
+import emuplugin
 import disasm
 
 
@@ -32,16 +32,14 @@ def opcode(code):
 
 class DCPU16:
     
-    def __init__(self, memory, display):
+    def __init__(self, memory, plugins=[]):
         
-        self.display = display
+        self.plugins = plugins
+        
         self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001E)]
         
         self.skip = False
         self.cycle = 0
-        
-        self.debugger_breaks = set()
-        self.debugger_in_continue = False
         
         self.opcodes = {}
         for name, value in inspect.getmembers(self):
@@ -189,7 +187,7 @@ class DCPU16:
             arg1 = self.memory[arg1]
         return arg1
     
-    def run(self, debug=False, trace=False, show_speed=False):
+    def run(self, trace=False, show_speed=False):
         tick = 0
         last_time = time.time()
         last_cycle = self.cycle
@@ -224,9 +222,8 @@ class DCPU16:
             else:
                 op(arg1, arg2)
                 if 0x01 <= opcode <=0xB: # write to memory
-                    # tell the display about any writes, even if out of range
-                    # as this removes duplication
-                    self.display.update_memory(arg1, self.memory[arg1])
+                    for p in self.plugins:
+                        p.memory_changed(self, arg1, self.memory[arg1])
                 if trace:
                     self.dump_registers()
                     self.dump_stack()
@@ -238,111 +235,11 @@ class DCPU16:
                 last_time = time.time()
                 last_cycle = self.cycle
                 tick = 0
-            if tick % 1000 == 0:
-                try:
-                    self.display.redraw()
-                except SystemExit:
-                    break
-            
-            if debug:
-                self.display.redraw()
-                self.debugger_prompt()
-    
-    def debugger_prompt(self):
-        if not self.debugger_in_continue or self.memory[PC] in self.debugger_breaks:
-            self.debugger_in_continue = False
-            while True:
-                try:
-                    command = [s.lower() for s in raw_input("debug> ").split()]
-                except EOFError:
-                    # Ctrl-D
-                    print("")
-                    sys.exit()
-                try:
-                    if not command or command[0] in ("step", "st"):
-                        break
-                    elif command[0] == "help":
-                        help_msg = """Commands:
-help
-st[ep] - (or simply newline) - execute next instruction
-g[et] <address>|%<register> - (also p[rint]) - print value of memory cell or register
-s[et] <address>|%<register> <value_in_hex> - set value of memory cell or register to <value_in_hex>
-b[reak] <address> [<address2>...] - set breakpoint at given addresses (to be used with 'continue')
-cl[ear] <address> [<address2>...] - remove breakpoints from given addresses
-c[ont[inue]] - run without debugging prompt until breakpoint is encountered
-
-All addresses are in hex (you can add '0x' at the beginning)
-Close emulator with Ctrl-D
-"""
-                        print(help_msg)
-                    elif command[0] in ("get", "g", "print", "p"):
-                        self.debugger_get(*command[1:])
-                    elif command[0] in ("set", "s"):
-                        self.debugger_set(*command[1:])
-                    elif command[0] in ("break", "b"):
-                        if len(command) < 2:
-                            raise ValueError("Break command takes at least 1 parameter!")
-                        self.debugger_break(*command[1:])
-                    elif command[0] in ("clear", "cl"):
-                        self.debugger_clear(*command[1:])
-                    elif command[0] in ("continue", "cont", "c"):
-                        self.debugger_in_continue = True
-                        break
-                    else:
-                        raise ValueError("Invalid command!")
-                except ValueError as ex:
-                    print(ex)
-    
-    @staticmethod
-    def debugger_parse_location(what):
-        registers = "abcxyzij"
-        specials = ("pc", "sp", "o")
-        if what.startswith("%"):
-            what = what[1:]
-            if what in registers:
-                return  0x10000 + registers.find(what)
-            elif what in specials:
-                return  (PC, SP, O)[specials.index(what)]
-            else:
-                raise ValueError("Invalid register!")
-        else:
-            addr = int(what, 16)
-            if not 0 <= addr <= 0xFFFF:
-                raise ValueError("Invalid address!")
-            return addr
-    
-    def debugger_break(self, *addrs):
-        breaks = set()
-        for addr in addrs:
-            addr = int(addr, 16)
-            if not 0 <= addr <= 0xFFFF:
-                raise ValueError("Invalid address!")
-            breaks.add(addr)
-        self.debugger_breaks.update(breaks)
-    
-    def debugger_clear(self, *addrs):
-        if not addrs:
-            self.debugger_breaks = set()
-        else:
-            breaks = set()
-            for addr in addrs:
-                addr = int(addr, 16)
-                if not 0 <= addr <= 0xFFFF:
-                    raise ValueError("Invalid address!")
-                breaks.add(addr)
-            self.debugger_breaks.difference_update(breaks)
-    
-    def debugger_set(self, what, value):
-        value = int(value, 16)
-        if not 0 <= value <= 0xFFFF:
-            raise ValueError("Invalid value!")
-        addr = self.debugger_parse_location(what)
-        self.memory[addr] = value
-    
-    def debugger_get(self, what):
-        addr = self.debugger_parse_location(what)
-        value = self.memory[addr]
-        print("hex: {hex}\ndec: {dec}\nbin: {bin}".format(hex=hex(value), dec=value, bin=bin(value)))
+            try:
+                for p in self.plugins:
+                    p.tick(self)
+            except SystemExit:
+                break
     
     def dump_registers(self):
         print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
@@ -357,12 +254,17 @@ Close emulator with Ctrl-D
 
 
 if __name__ == "__main__":
+    plugins = emuplugin.importPlugins()
     parser = argparse.ArgumentParser(description="DCPU-16 emulator")
     parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode. This implies '--trace'")
     parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
     parser.add_argument("-s", "--speed", action="store_const", const=True, default=False, help="Print speed the emulator is running at in kHz")
-    parser.add_argument("--term", action="store", default="null", help="Terminal to use (e.g. null, pygame)")
     parser.add_argument("object_file", help="File with assembled DCPU binary")
+    
+    for p in plugins:
+        for args in p.arguments:
+            parser.add_argument(*args[0], **args[1])
+    
     args = parser.parse_args()
     if args.debug:
         args.trace = True
@@ -374,13 +276,19 @@ if __name__ == "__main__":
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
     
-    terminal = importlib.import_module(args.term + "_terminal")
-    term = terminal.Terminal()
-    term.show()
-    dcpu16 = DCPU16(program, display=term)
+    plugins_loaded = []
     try:
-        dcpu16.run(debug=args.debug, trace=args.trace, show_speed=args.speed)
+        for p in plugins:
+            p = p(args)
+            if p.loaded:
+                print("Started plugin: %s" % p.name)
+                plugins_loaded.append(p)
+        
+        dcpu16 = DCPU16(program, plugins_loaded)
+        
+        dcpu16.run(trace=args.trace, show_speed=args.speed)
     except KeyboardInterrupt:
         pass
     finally:
-        term.quit()
+        for p in plugins_loaded:
+            p.shutdown()

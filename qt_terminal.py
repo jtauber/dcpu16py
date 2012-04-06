@@ -2,16 +2,20 @@ import sys
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 
+# Ensure that the QT application does not try to handle (and spam) the KeyboardInterrupt
+import signal
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 class Terminal(QtGui.QWidget):
     VSIZE = 25
-    HSIZE = 80
-    HEIGHT = 378
-    WIDTH = 644
+    HSIZE = 60
     BUFFER_SIZE = VSIZE * HSIZE
-    START_ADDRESS = 0x8000
+    
+    COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
     
     def __init__(self):
+        self.width = self.VSIZE
+        self.height = self.HSIZE
         self.app = QtGui.QApplication(sys.argv)
         super(Terminal, self).__init__()
         
@@ -19,29 +23,26 @@ class Terminal(QtGui.QWidget):
         for y in range(self.VSIZE):
             self.buffer.append([])
             for _ in range(self.HSIZE):
-                self.buffer[y].append(" ")
+                self.buffer[y].append((" ", None))
         
         self.font = QtGui.QFont("Monospace", 10)
         self.font.setStyleHint(QtGui.QFont.TypeWriter)
         font_metrics = QtGui.QFontMetrics(self.font)
-        self.width = font_metrics.maxWidth() * self.HSIZE + 4
-        self.height = font_metrics.height() * self.VSIZE + 4
+        self.cell_width = font_metrics.maxWidth() + 2
+        self.cell_height = font_metrics.height()
+        win_width = self.cell_width * self.HSIZE
+        win_height = self.cell_height * self.VSIZE
         
-        self.resize(self.width, self.height)
-        self.setMinimumSize(self.width, self.height)
-        self.setMaximumSize(self.width, self.height)
+        self.resize(win_width, win_height)
+        self.setMinimumSize(win_width, win_height)
+        self.setMaximumSize(win_width, win_height)
         self.setWindowTitle("DCPU-16 terminal")
         
         self.app.setQuitOnLastWindowClosed(False)
         self.closed = False
     
-    def update_memory(self, address, value):
-        if self.START_ADDRESS <= address < (self.START_ADDRESS + self.VSIZE * self.HSIZE):
-            index = address - self.START_ADDRESS
-            line = index // self.HSIZE
-            col = index % self.HSIZE
-            char = chr(value & 0x00FF)
-            self.buffer[line][col] = char
+    def update_character(self, row, column, character, color=None):
+        self.buffer[row][column] = (chr(character), color)
     
     def closeEvent(self, e):
         self.closed = True
@@ -58,12 +59,20 @@ class Terminal(QtGui.QWidget):
     def paintEvent(self, event):
         qp = QtGui.QPainter()
         qp.begin(self)
-        
-        qp.fillRect(0, 0, self.width, self.height, QtGui.QBrush(QtGui.QColor(0, 0, 0)))
-        
-        text = "\n".join("".join(line) for line in self.buffer)
-        qp.setPen(QtGui.QColor(255, 255, 255))
         qp.setFont(self.font)
-        qp.drawText(1, 1, self.width, self.height, Qt.AlignLeft | Qt.AlignTop, text)        
-        
+        y = 0
+        for line in self.buffer:
+            x = 0
+            for c in line:
+                if not c[1] or (not c[1][0] and not c[1][1]):
+                    fgcolor = self.COLORS[7]
+                    bgcolor = self.COLORS[0]
+                else:
+                    fgcolor = self.COLORS[c[1][0]]
+                    bgcolor = self.COLORS[c[1][1]]
+                qp.fillRect(x, y, self.cell_width, self.cell_height, QtGui.QColor(*bgcolor))
+                qp.setPen(QtGui.QColor(*fgcolor))
+                qp.drawText(x, y, self.cell_width, self.cell_height, Qt.AlignCenter | Qt.AlignCenter, c[0])
+                x += self.cell_width
+            y += self.cell_height
         qp.end()
