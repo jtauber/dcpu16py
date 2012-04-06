@@ -234,7 +234,7 @@ def codegen(source, input_filename="<unknown>"):
             
         else:
             o = OPCODES[s.instruction]
-            a, x = process_operand(s.first)
+            a, x = process_operand(s.first, lvalue=True)
             b, y = process_operand(s.second)
             
         program.append(((b << 10) + (a << 4) + o))
