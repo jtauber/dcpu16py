@@ -86,19 +86,34 @@ def parse_data(string, loc, tokens):
 datalist = P.commaSeparatedList.copy().setParseAction(parse_data)
 data = P.CaselessKeyword("DAT")("instruction") + P.Group(datalist)("data")
 
+line = P.Forward()
+
+macro = (
+    P.CaselessKeyword("#macro").suppress() 
+    + identifier("macro_name") 
+    # TODO(pwaller): Macro arguments
+    + P.Literal("{").suppress()
+    + P.Group(P.OneOrMore(line))("statements")
+    + P.Literal("}").suppress()
+)
+
 statement = P.Group(
     (instruction("instruction") +
      P.Group(operand)("first") +
      P.Optional(P.Literal(",").suppress() + P.Group(operand)("second"))
-    ) | data
+    ) 
+    | data
+    | macro
 )
 
-line = (P.Optional(label("label")) + 
-        P.Optional(statement("statement"), default=None) +
-        P.Optional(comment("comment")) + 
-        P.lineEnd.suppress())
+line << (
+    P.Optional(label("label"))
+    + P.Optional(statement("statement"), default=None)
+    + P.Optional(comment("comment"))
+    + P.lineEnd.suppress()
+)("line")
 
-full_grammar = P.stringStart + P.OneOrMore(P.Group(line)) + P.stringEnd
+full_grammar = (P.stringStart + P.OneOrMore(P.Group(line)) + P.stringEnd)("program")
 
 
 if DEBUG:
@@ -202,6 +217,11 @@ def codegen(source, input_filename="<unknown>"):
             
         s = line.statement
         if not s: continue
+        
+        if s.macro_name:
+            log.warning("Macros are not yet supported, doing nothing with "
+                        "macro {0!r}".format(s.macro_name))
+            continue
         
         if s.instruction == "DAT":
             program.extend(s.data)
