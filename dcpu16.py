@@ -231,4 +231,12 @@ if __name__ == "__main__":
             word = f.read(2)
     
     dcpu16 = DCPU16(program)
+    toload = ['ExamplePlugin']
+    plugins = []
+    for p in toload:
+        plugin_cls = __import__(p.lower(), globals(), locals(), [p], -1).__dict__[p]
+        plugin = plugin_cls(dcpu16)
+        plugins.append(plugin)
+        plugin.run()
+    
     dcpu16.run(debug=args.debug)
