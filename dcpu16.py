@@ -219,12 +219,10 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         program = []
         f = open(sys.argv[1], "rb")
-        while True:
-            hi = f.read(1)
-            if not hi:
-                break
-            lo = f.read(1)
-            program.append((ord(hi) << 8) + ord(lo))
+        word = f.read(2)
+        while word:
+            program.append(struct.unpack(">H", word)[0])
+            word = f.read(2)
         
         dcpu16 = DCPU16(program)
         dcpu16.run(debug=True)
