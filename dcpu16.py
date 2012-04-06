@@ -12,8 +12,8 @@ class Cell:
         self.value = value
 
 
-# offsets into DCPU16.registers
-PC, SP, O = 8, 9, 10
+# offsets into DCPU16.registers corresponding to addressing mode codes
+SP, PC, O = 0x1B, 0x1C, 0x1D
 
 def opcode(code):
     """A decorator for opcodes"""
@@ -29,7 +29,7 @@ class DCPU16:
     
     def __init__(self, memory):
         self.memory = [Cell(memory[i]) if i < len(memory) else Cell() for i in range(0x10000)]
-        self.registers = tuple(Cell() for _ in range(11))
+        self.registers = tuple(Cell() for _ in range(30))
         self.skip = False
 
         self.opcodes = {}
@@ -128,7 +128,7 @@ class DCPU16:
         self.registers[PC].value = b.value
     
     def get_operand(self, a):
-        if a < 0x08:
+        if a < 0x08 or 0x1B <= a <= 0x1D:
             arg1 = self.registers[a]
         elif a < 0x10:
             arg1 = self.memory[self.registers[a % 0x08].value]
@@ -144,12 +144,6 @@ class DCPU16:
         elif a == 0x1A:
             self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
             arg1 = self.memory[self.registers[SP].value]
-        elif a == 0x1B:
-            arg1 = self.registers[SP]
-        elif a == 0x1C:
-            arg1 = self.registers[PC]
-        elif a == 0x1D:
-            arg1 = self.registers[O]
         elif a == 0x1E:
             arg1 = self.memory[self.memory[self.registers[PC].value].value]
             self.registers[PC].value += 1
