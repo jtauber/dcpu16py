@@ -3,9 +3,18 @@
 pyparsing based grammar for DCPU-16 0x10c assembler
 """
 
-from itertools import izip_longest
+try:
+    from itertools import izip_longest
+except ImportError:
+    from itertools import zip_longest as izip_longest
+
+try:
+    basestring
+except NameError:
+    basestring = str
 
 import argparse
+import struct
 import os
 
 import pyparsing as P
@@ -15,7 +24,7 @@ import pyparsing as P
 DEBUG = "DEBUG" in os.environ
 
 # otherwise \n is also treated as ignorable whitespace
-P.ParserElement.setDefaultWhitespaceChars(' \t')
+P.ParserElement.setDefaultWhitespaceChars(" \t")
 
 identifier = P.Word(P.alphas+"_", P.alphanums+"_")
 label = P.Combine(P.Literal(":").suppress() + identifier)
@@ -186,12 +195,11 @@ def codegen(source):
             program[i] = labels[c]
     
     # Turn words into bytes
-    result = []
+    result = bytes()
     for word in program:
         hi, lo = divmod(word, 0x100)
-        result += [hi, lo]
-    
-    return "".join(chr(c) for c in result)
+        result += struct.pack("BB", hi, lo)
+    return result
 
 def main():
     parser = argparse.ArgumentParser(
@@ -208,9 +216,9 @@ def main():
         program = codegen(fd.read())
         
     if not args.destination:
-        print program
+        print(program)
     else:
-        with open(args.destination, "w") as fd:
+        with open(args.destination, "wb") as fd:
             fd.write(program)
 
 if __name__ == "__main__":

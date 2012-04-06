@@ -171,7 +171,7 @@ class DCPU16:
             b, a = divmod(operands, 64)
             
             if debug:
-                print "%04X: %04X" % (pc, w)
+                print("%04X: %04X" % (pc, w))
             
             if opcode == 0x00:
                 arg1 = None
@@ -184,7 +184,7 @@ class DCPU16:
             
             if self.skip:
                 if debug:
-                    print "skipping"
+                    print("skipping")
                 self.skip = False
             else:
                 op(arg1, arg2)
@@ -193,20 +193,20 @@ class DCPU16:
                     self.dump_stack()
     
     def dump_registers(self):
-        print " ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J", "PC", "SP", "O"][i],
-            self.registers[i].value) for i in range(11))
+        print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J", "PC", "SP", "O"][i],
+            self.registers[i].value) for i in range(11)))
     
     def dump_stack(self):
         if self.registers[SP].value == 0x0:
-            print "[]"
+            print("[]")
         else:
-            print "[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value, 0x10000)) + "]"
+            print("[" + " ".join("%04X" % self.memory[m].value for m in range(self.registers[SP].value, 0x10000)) + "]")
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         program = []
-        f = open(sys.argv[1])
+        f = open(sys.argv[1], "rb")
         while True:
             hi = f.read(1)
             if not hi:
@@ -217,4 +217,4 @@ if __name__ == "__main__":
         dcpu16 = DCPU16(program)
         dcpu16.run(debug=True)
     else:
-        print "usage: ./dcpu16.py <object-file>"
+        print("usage: ./dcpu16.py <object-file>")
