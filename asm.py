@@ -28,6 +28,8 @@ def operand_re(prefix):
         |
         (\[\s*(?P<""" + prefix + """decimal_indexed>\d+)\s*\+\s*(?P<""" + prefix + """decimal_indexed_index>""" + GENERAL_REGISTERS + """)\s*\]) # decimal indexed
         |
+        (\[\s*(?P<""" + prefix + """label_indexed>\w+)\s*\+\s*(?P<""" + prefix + """label_indexed_index>""" + GENERAL_REGISTERS + """)\s*\]) # label indexed
+        |
         (\[\s*(0x(?P<""" + prefix + """hex_indirect>[0-9A-Fa-f]{1,4}))\s*\]) # hex indirect
         |
         (\[\s*(?P<""" + prefix + """decimal_indirect>\d+)\s*\]) # decimal indirect
@@ -74,6 +76,9 @@ def handle(token_dict, prefix):
     elif token_dict[prefix + "decimal_indexed"] is not None:
         a = 0x10 + IDENTIFIERS[token_dict[prefix + "decimal_indexed_index"].upper()]
         x = int(token_dict[prefix + "decimal_indexed"], 16)
+    elif token_dict[prefix + "label_indexed"] is not None:
+        a = 0x10 + IDENTIFIERS[token_dict[prefix + "label_indexed_index"].upper()]
+        x = token_dict[prefix + "label"]
     elif token_dict[prefix + "hex_indirect"] is not None:
         a = 0x1E
         x = int(token_dict[prefix + "hex_indirect"], 16)
