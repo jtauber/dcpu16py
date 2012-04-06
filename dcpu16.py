@@ -2,7 +2,7 @@
 
 
 import sys
-
+import inspect
 
 class Cell:
     """
@@ -15,6 +15,15 @@ class Cell:
 # offsets into DCPU16.registers
 PC, SP, O = 8, 9, 10
 
+def opcode(code):
+    '''A decorator for opcodes'''
+    def decorator(func):
+        setattr(func, '_is_opcode', True)
+        setattr(func, '_opcode', code)
+        return func
+
+    return decorator
+
 
 class DCPU16:
     
@@ -22,25 +31,35 @@ class DCPU16:
         self.memory = [Cell(memory[i]) if i < len(memory) else Cell() for i in range(0x10000)]
         self.registers = tuple(Cell() for _ in range(11))
         self.skip = False
+
+        self.opcodes = {}
+        for name, value in inspect.getmembers(self):
+            if inspect.ismethod(value) and getattr(value, '_is_opcode', False):
+                self.opcodes[getattr(value, '_opcode')] = value 
     
+    @opcode(0x01)
     def SET(self, a, b):
         a.value = b.value
     
+    @opcode(0x02)
     def ADD(self, a, b):
         o, r = divmod(a.value + b.value, 0x10000)
         self.registers[O].value = o
         a.value = r
     
+    @opcode(0x03)
     def SUB(self, a, b):
         o, r = divmod(a.value - b.value, 0x10000)
         self.registers[O].value = 0xFFFF if o == -1 else 0x0000
         a.value = r
     
+    @opcode(0x04)
     def MUL(self, a, b):
         o, r = divmod(a.value * b.value, 0x10000)
         a.value = r
         self.registers[O].value = o % 0x10000
     
+    @opcode(0x05)
     def DIV(self, a, b):
         if b.value == 0x0:
             r = 0x0
@@ -51,6 +70,7 @@ class DCPU16:
         a.value = r
         self.registers[O].value = o
     
+    @opcode(0x06)
     def MOD(self, a, b):
         if b.value == 0x0:
             r = 0x0
@@ -58,39 +78,49 @@ class DCPU16:
             r = a.value % b.value
         a.value = r
     
+    @opcode(0x07)
     def SHL(self, a, b):
         r = a.value << b.value
         o = ((a.value << b.value) >> 16) % 0x10000
         a.value = r
         self.registers[O].value = o
     
+    @opcode(0x08)
     def SHR(self, a, b):
         r = a.value >> b.value
         o = ((a.value << 16) >> b.value) % 0x10000
         a.value = r
         self.registers[O].value = o
     
+    @opcode(0x09)
     def AND(self, a, b):
         a.value = a.value & b.value
     
+    @opcode(0x0a)
     def BOR(self, a, b):
         a.value = a.value | b.value
     
+    @opcode(0x0b)
     def XOR(self, a, b):
         a.value = a.value ^ b.value
     
+    @opcode(0x0c)
     def IFE(self, a, b):
         self.skip = not (a.value == b.value)
     
+    @opcode(0x0d)
     def IFN(self, a, b):
         self.skip = not (a.value != b.value)
     
+    @opcode(0x0e)
     def IFG(self, a, b):
         self.skip = not (a.value > b.value)
     
+    @opcode(0x0f)
     def IFB(self, a, b):
         self.skip = not ((a.value & b.value) != 0)
     
+    @opcode(0x010)
     def JSR(self, a, b):
         self.registers[SP].value = (self.registers[SP].value - 1) % 0x10000
         pc = self.registers[PC].value
@@ -144,20 +174,12 @@ class DCPU16:
                 print "%04X: %04X" % (pc, w)
             
             if opcode == 0x00:
-                if a == 0x01:
-                    op = self.JSR
-                    arg1 = None
-                else:
-                    continue
+                arg1 = None
+                opcode = (a << 4) + 0x0
             else:
-                op = [
-                    None, self.SET, self.ADD, self.SUB,
-                    self.MUL, self.DIV, self.MOD, self.SHL,
-                    self.SHR, self.AND, self.BOR, self.XOR, self.IFE, self.IFN, self.IFG, self.IFB
-                ][opcode]
-                
                 arg1 = self.get_operand(a)
-            
+
+            op = self.opcodes[opcode]
             arg2 = self.get_operand(b)
             
             if self.skip:
