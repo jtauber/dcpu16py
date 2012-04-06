@@ -209,7 +209,7 @@ def codegen(source, input_filename="<unknown>"):
         
         if s.instruction == "JSR":
             o = 0x00
-            a = 0x01
+            a, x = 0x01, None
             b, y = process_operand(s.first)
             
         else:
