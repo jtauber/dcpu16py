@@ -23,6 +23,7 @@ class DCPU16:
     def __init__(self, memory):
         self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001E)]
         self.skip = False
+        self.cycle = 0
         
         self.opcodes = {}
         for name, value in inspect.getmembers(self):
@@ -32,24 +33,28 @@ class DCPU16:
     @opcode(0x01)
     def SET(self, a, b):
         self.memory[a] = b
+        self.cycle += 1
     
     @opcode(0x02)
     def ADD(self, a, b):
         o, r = divmod(self.memory[a] + b, 0x10000)
         self.memory[O] = o
         self.memory[a] = r
+        self.cycle += 2
     
     @opcode(0x03)
     def SUB(self, a, b):
         o, r = divmod(self.memory[a] - b, 0x10000)
         self.memory[O] = 0xFFFF if o == -1 else 0x0000
         self.memory[a] = r
+        self.cycle += 2
     
     @opcode(0x04)
     def MUL(self, a, b):
         o, r = divmod(self.memory[a] * b, 0x10000)
         self.memory[a] = r
         self.memory[O] = o % 0x10000
+        self.cycle += 2
     
     @opcode(0x05)
     def DIV(self, a, b):
@@ -61,6 +66,7 @@ class DCPU16:
             o = ((self.memory[a] << 16) / b) % 0x10000
         self.memory[a] = r
         self.memory[O] = o
+        self.cycle += 3
     
     @opcode(0x06)
     def MOD(self, a, b):
@@ -69,6 +75,7 @@ class DCPU16:
         else:
             r = self.memory[a] % b
         self.memory[a] = r
+        self.cycle += 3
     
     @opcode(0x07)
     def SHL(self, a, b):
@@ -76,6 +83,7 @@ class DCPU16:
         o = ((self.memory[a] << b) >> 16) % 0x10000
         self.memory[a] = r
         self.memory[O] = o
+        self.cycle += 2
     
     @opcode(0x08)
     def SHR(self, a, b):
@@ -83,34 +91,42 @@ class DCPU16:
         o = ((self.memory[a] << 16) >> b) % 0x10000
         self.memory[a] = r
         self.memory[O] = o
+        self.cycle += 2
     
     @opcode(0x09)
     def AND(self, a, b):
         self.memory[a] = self.memory[a] & b
+        self.cycle += 1
     
     @opcode(0x0a)
     def BOR(self, a, b):
         self.memory[a] = self.memory[a] | b
+        self.cycle += 1
     
     @opcode(0x0b)
     def XOR(self, a, b):
         self.memory[a] = self.memory[a] ^ b
+        self.cycle += 1
     
     @opcode(0x0c)
     def IFE(self, a, b):
         self.skip = not (self.memory[a] == b)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x0d)
     def IFN(self, a, b):
         self.skip = not (self.memory[a] != b)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x0e)
     def IFG(self, a, b):
         self.skip = not (self.memory[a] > b)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x0f)
     def IFB(self, a, b):
         self.skip = not ((self.memory[a] & b) != 0)
+        self.cycle += 2 + 1 if self.skip else 0
     
     @opcode(0x010)
     def JSR(self, a, b):
@@ -118,6 +134,7 @@ class DCPU16:
         pc = self.memory[PC]
         self.memory[self.memory[SP]] = pc
         self.memory[PC] = b
+        self.cycle += 2
     
     def get_operand(self, a, dereference=False):
         literal = False
@@ -129,6 +146,7 @@ class DCPU16:
             next_word = self.memory[self.memory[PC]]
             self.memory[PC] += 1
             arg1 = next_word + self.memory[0x10000 + (a % 0x10)]
+            self.cycle += 1
         elif a == 0x18:
             arg1 = self.memory[SP]
             self.memory[SP] = (self.memory[SP] + 1) % 0x10000
@@ -140,9 +158,11 @@ class DCPU16:
         elif a == 0x1E:
             arg1 = self.memory[self.memory[PC]]
             self.memory[PC] += 1
+            self.cycle += 1
         elif a == 0x1F:
             arg1 = self.memory[PC]
             self.memory[PC] += 1
+            self.cycle += 1
         else:
             literal = True
             arg1 = a % 0x20
@@ -161,7 +181,7 @@ class DCPU16:
             b, a = divmod(operands, 64)
             
             if debug:
-                print("%04X: %04X" % (pc, w))
+                print("(%08X) %04X: %04X" % (self.cycle, pc, w))
             
             if opcode == 0x00:
                 arg1 = None

@@ -33,5 +33,5 @@ I'm also keen to find out how Notch plans I/O to work.
 
 ## Examples
 
-Now see [https://github.com/jtauber/DCPU-16-Examples](https://github.com/jtauber/DCPU-16-Examples) (almost my assembler and
+Now see [https://github.com/jtauber/DCPU-16-Examples](https://github.com/jtauber/DCPU-16-Examples) (although my assembler and
 emulator don't necessarily support everything there yet)

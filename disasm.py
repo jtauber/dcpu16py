@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import struct
 import sys
 
 
@@ -48,21 +49,21 @@ class Disassembler:
                 else:
                     continue
             else:
-                first = "%s %s" % (INSTRUCTIONS[opcode], self.format_operand(a))
+                first = "%s %s," % (INSTRUCTIONS[opcode], self.format_operand(a))
             
-            print("%04x: %s, %s" % (offset, first, self.format_operand(b)))
+            asm = "%s %s" % (first, self.format_operand(b))
+            binary = " ".join("%04x" % word for word in self.program[offset:self.offset])
+            print("%-40s ; %04x: %s" % (asm, offset, binary))
 
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
         program = []
-        f = open(sys.argv[1])
-        while True:
-            hi = f.read(1)
-            if not hi:
-                break
-            lo = f.read(1)
-            program.append((ord(hi) << 8) + ord(lo))
+        f = open(sys.argv[1], "rb")
+        word = f.read(2)
+        while word:
+            program.append(struct.unpack(">H", word)[0])
+            word = f.read(2)
         
         d = Disassembler(program)
         d.run()
