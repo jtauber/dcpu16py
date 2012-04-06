@@ -199,6 +199,9 @@ class DCPU16:
                 self.skip = False
             else:
                 op(arg1, arg2)
+                if 0x01 <= opcode <=0xB:
+                    if 0x8000 <= arg1 <= 0x8FFF:
+                        self.update_video(arg1)
                 if debug:
                     self.dump_registers()
                     self.dump_stack()
@@ -214,6 +217,9 @@ class DCPU16:
             print("[]")
         else:
             print("[" + " ".join("%04X" % self.memory[m] for m in range(self.memory[SP], 0x10000)) + "]")
+    
+    def update_video(self, location):
+        print("%04X: %04X" % (location, self.memory[location]))
 
 
 if __name__ == "__main__":
@@ -226,6 +232,6 @@ if __name__ == "__main__":
             word = f.read(2)
         
         dcpu16 = DCPU16(program)
-        dcpu16.run(debug=True)
+        dcpu16.run(debug=False)
     else:
         print("usage: ./dcpu16.py <object-file>")
