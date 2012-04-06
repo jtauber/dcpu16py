@@ -229,7 +229,19 @@ class DCPU16:
                     if not command or command[0] in ("step", "s"):
                         break
                     elif command[0] == "help":
-                        print("Commands:\n\thelp\n\tstep\n\tget <addr>\n\tset <addr> <value>")
+                        help_msg = """Commands:
+help
+s[tep] - (or simply newline) - execute next instruction
+g[et] <address>|%<register> - (also p[rint]) - print value of memory cell or register
+s[et] <address>|%<register> <value_in_hex> - set value of memory cell or register to <value_in_hex>
+b[reak] <address> [<address2>...] - set breakpoint at given addresses (to be used with 'continue')
+cl[ear] <address> [<address2>...] - remove breakpoints from given addresses
+c[ont[inue]] - run without debugging prompt until breakpoint is encountered
+
+All addresses are in hex (you can add '0x' at the beginning)
+Close emulator with Ctrl-D
+"""
+                        print(help_msg)
                     elif command[0] in ("get", "g", "print", "p"):
                         self.debugger_get(*command[1:])
                     elif command[0] in ("set", "s"):
@@ -306,9 +318,9 @@ class DCPU16:
     
     def dump_stack(self):
         if self.memory[SP] == 0x0:
-            print("[]")
+            print("Stack: []")
         else:
-            print("[" + " ".join("%04X" % self.memory[m] for m in range(self.memory[SP], 0x10000)) + "]")
+            print("Stack: [" + " ".join("%04X" % self.memory[m] for m in range(self.memory[SP], 0x10000)) + "]")
 
 
 if __name__ == "__main__":
