@@ -219,9 +219,8 @@ class DCPU16:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='DCPU-16 emulator')
-    # Run in debug mode anyway for now because running without it is meaningless
-    parser.add_argument('-d', '--debug', action='store_true',
-            default=True, help='Run emulator in debug mode')
+    parser.add_argument('-d', '--debug', action='store_const', const=True,
+            default=False, help='Run emulator in debug mode')
     parser.add_argument('object_file', help='File with assembled DCPU binary')
     args = parser.parse_args()
 
