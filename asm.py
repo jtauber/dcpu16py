@@ -82,7 +82,7 @@ def handle(token_dict, prefix):
         x = int(token_dict[prefix + "decimal_indexed"], 16)
     elif token_dict[prefix + "label_indexed"] is not None:
         a = 0x10 + IDENTIFIERS[token_dict[prefix + "label_indexed_index"].upper()]
-        x = token_dict[prefix + "label"]
+        x = token_dict[prefix + "label_indexed"]
     elif token_dict[prefix + "hex_indirect"] is not None:
         a = 0x1E
         x = int(token_dict[prefix + "hex_indirect"], 16)
