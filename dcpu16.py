@@ -31,6 +31,9 @@ class DCPU16:
         self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001E)]
         self.skip = False
         self.cycle = 0
+
+        self.debugger_breaks = []
+        self.debugger_in_continue = False
         
         self.opcodes = {}
         for name, value in inspect.getmembers(self):
@@ -210,26 +213,38 @@ class DCPU16:
                     self.dump_stack()
 
             if debug:
-                while True:
-                    try:
-                        command = [s.lower() for s in raw_input("debug> ").split()]
-                    except EOFError:
-                        # Ctrl-D
-                        print("")
-                        sys.exit()
-                    try:
-                        if not command or command[0] in ("step", "s"):
-                            break
-                        elif command[0] == "help":
-                            print("Commands:\n\thelp\n\tstep\n\tget <addr>\n\tset <addr> <value>")
-                        elif command[0] in ("get", "g", "print", "p"):
-                            self.debugger_get(*command[1:])
-                        elif command[0] in ("set", "s"):
-                            self.debugger_set(*command[1:])
-                        else:
-                            raise ValueError("Invalid command!")
-                    except ValueError as ex:
-                        print(ex)
+                self.debugger_prompt()
+
+    def debugger_prompt(self):
+        print(self.memory[PC])
+        print(self.debugger_breaks)
+        if not self.debugger_in_continue or self.memory[PC] in self.debugger_breaks:
+            self.debugger_in_continue = False
+            while True:
+                try:
+                    command = [s.lower() for s in raw_input("debug> ").split()]
+                except EOFError:
+                    # Ctrl-D
+                    print("")
+                    sys.exit()
+                try:
+                    if not command or command[0] in ("step", "s"):
+                        break
+                    elif command[0] == "help":
+                        print("Commands:\n\thelp\n\tstep\n\tget <addr>\n\tset <addr> <value>")
+                    elif command[0] in ("get", "g", "print", "p"):
+                        self.debugger_get(*command[1:])
+                    elif command[0] in ("set", "s"):
+                        self.debugger_set(*command[1:])
+                    elif command[0] in ("break", "b"):
+                        self.debugger_break(*command[1:])
+                    elif command[0] in ("continue", "cont", "c"):
+                        self.debugger_in_continue = True
+                        break
+                    else:
+                        raise ValueError("Invalid command!")
+                except ValueError as ex:
+                    print(ex)
 
     @staticmethod
     def debugger_parse_location(what):
@@ -249,6 +264,11 @@ class DCPU16:
                 raise ValueError("Invalid address!")
             return addr
 
+    def debugger_break(self, addr):
+        addr = int(addr, 16)
+        if not 0 <= addr <= 0xFFFF:
+            raise ValueError("Invalid address!")
+        self.debugger_breaks.append(addr)
 
     def debugger_set(self, what, value):
         value = int(value, 16)
