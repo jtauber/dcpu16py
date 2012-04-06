@@ -18,6 +18,10 @@ A dissassembler and assembler are also included.
 * `./dcpu16.py example.obj` will execute it (currently hard-coded to debug mode)
 * `./disasm.py example.obj` will disassemble the given object code
 
+There is also an experimental pyparsing-based assembler ./asm_pyparsing.py
+contributed by Peter Waller with support for case-insensitive instructions and
+identifers as well as `dat`.
+
 Note that the disassembler doesn't quite output in a format that can be
 round-tripped back into the assembler as it annotates each line with a
 memory offset.
