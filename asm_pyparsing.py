@@ -37,35 +37,42 @@ label = P.Combine(P.Literal(":").suppress() + identifier)
 
 comment = P.Literal(";").suppress() + P.restOfLine
 
-register = (P.Or(P.CaselessKeyword(x) for x in "ABCIJXYZO") |
-            P.CaselessKeyword("PC") |
-            P.CaselessKeyword("SP")).addParseAction(P.upcaseTokens)
+register = (P.Or(P.CaselessKeyword(x) for x in "ABCIJXYZO")
+            | P.oneOf("PC SP", caseless=True))
 
-stack_op = P.CaselessKeyword("PEEK") | P.CaselessKeyword("POP") | P.CaselessKeyword("PUSH")
+stack_op = P.oneOf("PEEK POP PUSH", caseless=True)
 
 hex_literal = P.Combine(P.Literal("0x") + P.Word(P.hexnums))
 dec_literal = P.Word(P.nums)
 
-hex_literal.setParseAction(lambda s, l, t: int(t[0], 16))
-dec_literal.setParseAction(lambda s, l, t: int(t[0]))
-
 numeric_literal = hex_literal | dec_literal
 literal = numeric_literal | identifier
 
+opcode = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR "
+                 "AND BOR XOR IFE IFN IFG IFB JSR", caseless=True)
 
-opcode = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB JSR", caseless=True)
-basic_operand = P.Group(register("register") | stack_op("stack_op") | literal("literal"))
-indirect_expr = P.Group(literal("literal") + P.Literal("+") + register("register"))
+basic_operand = P.Group(register("register")
+                        | stack_op("stack_op")
+                        | literal("literal"))
 
+indirect_expr = P.Group(literal("literal")
+                        + P.Literal("+")
+                        + register("register"))
+
+hex_literal.setParseAction(lambda s, l, t: int(t[0], 16))
+dec_literal.setParseAction(lambda s, l, t: int(t[0]))
 register.addParseAction(P.upcaseTokens)
 stack_op.addParseAction(P.upcaseTokens)
 opcode.addParseAction(P.upcaseTokens)
 
-indirection_content = (indirect_expr("expr") | basic_operand("basic"))
-indirection = P.Group(
-    (P.Literal("[").suppress() + indirection_content + P.Literal("]").suppress())
-  | (P.Literal("(").suppress() + indirection_content + P.Literal(")").suppress())
-     )
+def sandwich(brackets, expr):
+    l, r = brackets
+    return P.Literal(l).suppress() + expr + P.Literal(r).suppress()
+
+indirection_content = indirect_expr("expr") | basic_operand("basic")
+indirection = P.Group(sandwich("[]", indirection_content) |
+                      sandwich("()", indirection_content))
+
 operand = basic_operand("basic") | indirection("indirect")
 
 def make_words(data):
@@ -98,11 +105,14 @@ macro = (
     + P.Literal("}").suppress()
 )
 
+instruction = (
+    opcode("opcode")
+    + P.Group(operand)("first")
+    + P.Optional(P.Literal(",").suppress() + P.Group(operand)("second"))
+)
+
 statement = P.Group(
-    (opcode("opcode") +
-     P.Group(operand)("first") +
-     P.Optional(P.Literal(",").suppress() + P.Group(operand)("second"))
-    ) 
+    instruction
     | data
     | macro
 )
@@ -144,10 +154,14 @@ OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5,
         
 def process_operand(o, lvalue=False):
     """
-    Returns
+    Returns (a, x) where a is a value which identifies the nature of the value
+    and x is either None or a word to be inserted directly into the output stream
+    (e.g. a literal value >= 0x20)
     """
+    # TODO(pwaller): Reject invalid lvalues
     
     def invalid_op(reason):
+        # TODO(pwaller): Need to indicate origin of error
         return RuntimeError("Invalid operand, {0}: {1}"
                             .format(reason, o.asXML()))
 
@@ -200,7 +214,8 @@ def codegen(source, input_filename="<unknown>"):
     except P.ParseException as exc:
         log.fatal("Parse error:")
         log.fatal("  {0}:{1}:{2} HERE {3}"
-                  .format(input_filename, exc.lineno, exc.col, exc.markInputline()))
+                  .format(input_filename, exc.lineno, exc.col,
+                          exc.markInputline()))
         return None
     
     log.debug("=====")
@@ -279,7 +294,8 @@ def main():
     if program is None:
         log.fatal("No program produced.")
         if not DEBUG:
-            log.fatal("Run with DEBUG=1 ./asm_pyparsing.py for more information.")
+            log.fatal("Run with DEBUG=1 ./asm_pyparsing.py "
+                      "for more information.")
         return 1
     
     if not args.destination:
@@ -288,7 +304,8 @@ def main():
         with open(args.destination, "wb") as fd:
             fd.write(program)
         log.info("Program written to {0} ({1} bytes, hash={2})"
-                 .format(args.destination, len(program), hex(abs(hash(program)))))
+                 .format(args.destination, len(program),
+                         hex(abs(hash(program)))))
             
     return 0
 
