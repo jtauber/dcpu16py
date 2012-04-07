@@ -141,18 +141,18 @@ for lineno, line in enumerate(open(input_filename), start=1):
     if token_dict is None:
         report_error(input_filename, lineno, "Syntax error")
     
-    if token_dict["label"]:
+    if token_dict["label"] is not None:
         labels[token_dict["label"]] = len(program)
-    
+
+    o = x = y = None
     if token_dict["basic"] is not None:
         o = OPCODES[token_dict["basic"].upper()]
         a, x = handle(token_dict, "op1_")
         b, y = handle(token_dict, "op2_")
     elif token_dict["nonbasic"] is not None:
-        o, a, x = 0x00, 0x01, None
+        o, a = 0x00, 0x01
         b, y = handle(token_dict, "op3_")
     elif token_dict["data"] is not None:
-        o = None
         for datum in re.findall("""("[^"]*"|0x[0-9A-Fa-f]{1,4}|\d+)""", token_dict["data"]):
             if datum.startswith("\""):
                 program.extend(ord(ch) for ch in datum[1:-1])
@@ -160,8 +160,6 @@ for lineno, line in enumerate(open(input_filename), start=1):
                 program.append(int(datum[2:], 16))
             else:
                 program.append(int(datum))
-    else: # blank line or comment-only
-        o = x = y = None
     
     if o is not None:
         program.append(((b << 10) + (a << 4) + o))
