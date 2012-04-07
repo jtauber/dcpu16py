@@ -70,49 +70,29 @@ IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5, "I": 
 OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA, "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}
 
 
+def clamped_value(l):
+    return (0x20 + l, None) if l < 0x20 else (0x1F, l)
+
+
+ADDR_MAP = {
+    "register":              lambda t,v: (IDENTIFIERS[t.upper()], None),
+    "register_indirect":     lambda t,v: (0x08 + IDENTIFIERS[t.upper()], None),
+    "hex_indexed_index":     lambda t,v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
+    "decimal_indexed_index": lambda t,v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
+    "label_indexed_index":   lambda t,v: (0x10 + IDENTIFIERS[t.upper()], v),
+    "hex_indirect":          lambda t,v: (0x1E, int(t, 16)),
+    "decimal_indirect":      lambda t,v: (0x1E, int(t)),
+    "hex_literal":           lambda t,v: clamped_value(int(t, 16)),
+    "decimal_literal":       lambda t,v: clamped_value(int(t)),
+    "label_indirect":        lambda t,v: (0x1E, t)
+    "label":                 lambda t,v: (0x1F, t)
+    }
+
 def handle(token_dict, prefix):
-    x = None
-    if token_dict[prefix + "register"] is not None:
-        a = IDENTIFIERS[token_dict[prefix + "register"].upper()]
-    elif token_dict[prefix + "register_indirect"] is not None:
-        a = 0x08 + IDENTIFIERS[token_dict[prefix + "register_indirect"].upper()]
-    elif token_dict[prefix + "hex_indexed"] is not None:
-        a = 0x10 + IDENTIFIERS[token_dict[prefix + "hex_indexed_index"].upper()]
-        x = int(token_dict[prefix + "hex_indexed"], 16)
-    elif token_dict[prefix + "decimal_indexed"] is not None:
-        a = 0x10 + IDENTIFIERS[token_dict[prefix + "decimal_indexed_index"].upper()]
-        x = int(token_dict[prefix + "decimal_indexed"], 16)
-    elif token_dict[prefix + "label_indexed"] is not None:
-        a = 0x10 + IDENTIFIERS[token_dict[prefix + "label_indexed_index"].upper()]
-        x = token_dict[prefix + "label_indexed"]
-    elif token_dict[prefix + "hex_indirect"] is not None:
-        a = 0x1E
-        x = int(token_dict[prefix + "hex_indirect"], 16)
-    elif token_dict[prefix + "decimal_indirect"] is not None:
-        a = 0x1E
-        x = int(token_dict[prefix + "decimal_indirect"])
-    elif token_dict[prefix + "hex_literal"] is not None:
-        l = int(token_dict[prefix + "hex_literal"], 16)
-        if l < 0x20:
-            a = 0x20 + l
-        else:
-            a = 0x1F
-            x = l
-    elif token_dict[prefix + "decimal_literal"] is not None:
-        l = int(token_dict[prefix + "decimal_literal"])
-        if l < 0x20:
-            a = 0x20 + l
-        else:
-            a = 0x1F
-            x = l
-    elif token_dict[prefix + "label_indirect"] is not None:
-        a = 0x1E
-        x = token_dict[prefix + "label"]
-    elif token_dict[prefix + "label"] is not None:
-        a = 0x1F
-        x = token_dict[prefix + "label"]
-    
-    return a, x
+    token = [t for t in token_dict.keys() if t.startswith(prefix) and token_dict[t] is not None][0]
+    suffix = token[len(prefix):]
+    v = token_dict[token[:token.rfind("_index")]] if token.endswith("_index") else None
+    return ADDR_MAP[suffix](token_dict[token], v)
 
 
 program = []
@@ -143,7 +123,7 @@ for lineno, line in enumerate(open(input_filename), start=1):
     
     if token_dict["label"] is not None:
         labels[token_dict["label"]] = len(program)
-
+    
     o = x = y = None
     if token_dict["basic"] is not None:
         o = OPCODES[token_dict["basic"].upper()]
