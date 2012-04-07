@@ -8,8 +8,10 @@ class Terminal(QtGui.QWidget):
     HSIZE = 80
     HEIGHT = 378
     WIDTH = 644
+    BUFFER_SIZE = VSIZE * HSIZE
     
     def __init__(self):
+        self.app = QtGui.QApplication(sys.argv)
         super(Terminal, self).__init__()
         self.buffer = []
         for y in range(self.VSIZE):
@@ -18,7 +20,21 @@ class Terminal(QtGui.QWidget):
                 self.buffer[y].append(" ")
         self.resize(self.WIDTH, self.HEIGHT)
         self.setWindowTitle("DCPU-16 terminal")
-        
+    
+    def update_buffer(self, location, value):
+        index = location - 0x8000
+        line = index // self.HSIZE
+        col = index % self.HSIZE
+        char = chr(value & 0x00FF)
+        self.buffer[line][col] = char
+    
+    def redraw(self):
+        self.update()
+        self.app.processEvents()
+    
+    def quit(self):
+        self.app.quit()
+    
     def paintEvent(self, event):
         qp = QtGui.QPainter()
         qp.begin(self)
@@ -31,13 +47,3 @@ class Terminal(QtGui.QWidget):
         qp.drawText(1, 1, self.WIDTH, self.HEIGHT, Qt.AlignLeft | Qt.AlignTop, text)        
         
         qp.end()
-
-
-def main():
-    app = QtGui.QApplication(sys.argv)
-    term = Terminal()
-    term.show()
-    sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    main()
