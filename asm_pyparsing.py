@@ -94,19 +94,29 @@ def parse_data(string, loc, tokens):
         result.extend(values)
     return result
 
+# TODO(pwaller): Support for using macro argument values in data statement
 datalist = P.commaSeparatedList.copy().setParseAction(parse_data)
 data = P.CaselessKeyword("DAT")("opcode") + P.Group(datalist)("data")
 
 line = P.Forward()
 
-macro = (
-    P.CaselessKeyword("#macro").suppress() 
-    + identifier("macro_name") 
-    # TODO(pwaller): Macro arguments
-    + P.Literal("{").suppress()
-    + P.Group(P.OneOrMore(line))("statements")
-    + P.Literal("}").suppress()
-)
+#commasepitem = P.Combine(P.OneOrMore(Word(_noncomma) + Optional( Word(" \t") +  ~Literal(",") + ~LineEnd() ) ) ).streamline()
+macro_definition_args = P.Group(P.delimitedList(P.Optional(identifier("arg"))))("args")
+
+macro_definition = P.Group(
+    P.CaselessKeyword("#macro").suppress()
+    + identifier("name")
+    + sandwich("()", macro_definition_args)
+    + sandwich("{}", P.Group(P.OneOrMore(line))("statements"))
+)("macro_definition")
+
+macro_argument = operand | datum
+
+macro_call_args = P.Group(P.delimitedList(P.Optional(macro_argument)))("args")
+
+macro_call = P.Group(
+    identifier("name") + sandwich("()", macro_call_args)
+)("macro_call")
 
 instruction = (
     opcode("opcode")
@@ -117,7 +127,8 @@ instruction = (
 statement = P.Group(
     instruction
     | data
-    | macro
+    | macro_definition
+    | macro_call
 )
 
 line << (
@@ -227,24 +238,63 @@ def codegen(source, input_filename="<unknown>"):
     log.debug(parsed.asXML())
     
     labels = {}
+    macros = {}
     program = []
     
-    for i, line in enumerate(parsed):
-        log.debug("Interpreting element {0}: {1}".format(i, line))
-        if line.label:
-            labels[line.label] = len(program)
-            
-        s = line.statement
-        if not s: continue
+    def process_macro_definition(statement):
+        log.debug("Macro definition: {0}".format(statement.asXML()))
+        macros[statement.name] = statement
         
-        if s.macro_name:
-            log.warning("Macros are not yet supported, doing nothing with "
-                        "macro {0!r}".format(s.macro_name))
-            continue
+    def process_macro_call(statement):
+        log.debug("Macro call: {0}".format(statement.asXML()))
+        macroname = statement.name
+        macro = macros.get(macroname, None)
+        if not macro:
+            raise RuntimeError("Call to undefined macro: {0}".format(macroname))
         
+        log.debug("Macrodef args: {0!r}".format(macro.args))
+        log.debug("Macrouse args: {0!r}".format(statement.args))
+        
+        assert len(macro.args) == len(statement.args), (
+            "Wrong number of arguments to macro call {0!r}".format(macroname))
+        
+        # TODO(pwaller): Check for collisions between argument name and code 
+        # label
+        args = dict(zip(macro.args, statement.args))
+        #for argdef, argvalue in zip(macro.args, statement.args):
+            #log.debug("argdef = {0} argvalue = {1}".format(argdef, argvalue))
+            #args[argdef] = argvalue
+        
+        log.debug("Populated args: {0}".format(args))
+         
+        statements = []
+        
+        # Replace label literals which are macro arguments with their values
+        for s in macro.statements:
+            if not s: continue
+            statement = s.copy()
+            if s and s.first and s.first.basic and s.first.basic.literal:
+                if s.first.basic.literal in args:
+                    statement["first"] = args[s.first.basic.literal]
+            if s and s.second and s.second.basic and s.second.basic.literal:
+                if s.second.basic.literal in args:
+                    n = s.second.basic.literal
+                    log.debug("REPLACING! {0} = {1}".format(n, args[n]))
+                    statement.second.basic.pop("literal")
+                    statement.second["basic"] = args[n]
+            statements.append(statement)
+        
+        log.debug("Populated macro: {0}".format(P.ParseResults(statements).asXML()))
+        log.debug(" statement.second = {0}".format(statements[0].second))
+        # Do code generation
+        code = []
+        for s in statements:
+            code.extend(generate(s))
+        return code
+        
+    def generate(s):
         if s.opcode == "DAT":
-            program.extend(s.data)
-            continue
+            return s.data
         
         if s.opcode == "JSR":
             o = 0x00
@@ -255,10 +305,33 @@ def codegen(source, input_filename="<unknown>"):
             o = OPCODES[s.opcode]
             a, x = process_operand(s.first, lvalue=True)
             b, y = process_operand(s.second)
+        
+        code = []
+        code.append(((b << 10) + (a << 4) + o))
+        if x is not None: code.append(x)
+        if y is not None: code.append(y)
+        return code
+    
+    for i, line in enumerate(parsed):
+        log.debug("Interpreting element {0}: {1}".format(i, line))
+        if line.label:
+            if line.label in labels:
+                # TODO(pwaller): Line indications
+                log.fatal("Duplicate label definition! {0}".format(line.label))
+                return None
+            labels[line.label] = len(program)
             
-        program.append(((b << 10) + (a << 4) + o))
-        if x is not None: program.append(x)
-        if y is not None: program.append(y)
+        s = line.statement
+        if not s: continue
+        
+        if s.macro_definition:
+            process_macro_definition(s.macro_definition)
+            continue
+        elif s.macro_call:
+            program.extend(process_macro_call(s.macro_call))
+            continue
+        
+        program.extend(generate(s))
         
     # Substitute labels
     for i, c in enumerate(program):
