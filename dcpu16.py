@@ -380,6 +380,7 @@ if __name__ == "__main__":
     dcpu16 = DCPU16(program, display=term)
     try:
         dcpu16.run(debug=args.debug, trace=args.trace, show_speed=args.speed)
-        term.quit()
     except KeyboardInterrupt:
+        pass
+    finally:
         term.quit()
