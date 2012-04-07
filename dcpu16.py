@@ -370,5 +370,8 @@ if __name__ == "__main__":
     term = terminal.Terminal()
     term.show()
     dcpu16 = DCPU16(program, display=term)
-    dcpu16.run(debug=args.debug, trace=args.trace, show_speed=args.speed)
-    term.quit()
+    try:
+        dcpu16.run(debug=args.debug, trace=args.trace, show_speed=args.speed)
+        term.quit()
+    except KeyboardInterrupt:
+        term.quit()
