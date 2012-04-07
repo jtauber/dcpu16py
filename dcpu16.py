@@ -6,7 +6,7 @@ import struct
 import sys
 import time
 
-from pygame_terminal import Terminal
+from null_terminal import Terminal
 
 
 try:
