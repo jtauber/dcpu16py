@@ -162,7 +162,7 @@ class DCPU16:
             next_word = self.memory[self.memory[PC]]
             self.memory[PC] += 1
             arg1 = next_word + self.memory[0x10000 + (a % 0x10)]
-            self.cycle += 1
+            self.cycle += 0 if self.skip else 1
         elif a == 0x18:
             arg1 = self.memory[SP]
             self.memory[SP] = (self.memory[SP] + 1) % 0x10000
@@ -174,11 +174,11 @@ class DCPU16:
         elif a == 0x1E:
             arg1 = self.memory[self.memory[PC]]
             self.memory[PC] += 1
-            self.cycle += 1
+            self.cycle += 0 if self.skip else 1
         elif a == 0x1F:
             arg1 = self.memory[PC]
             self.memory[PC] += 1
-            self.cycle += 1
+            self.cycle += 0 if self.skip else 1
         else:
             literal = True
             arg1 = a % 0x20
