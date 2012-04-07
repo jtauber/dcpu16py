@@ -4,6 +4,9 @@ import argparse
 import inspect
 import struct
 import sys
+import time
+
+from pygame_terminal import Terminal
 
 
 try:
@@ -28,8 +31,11 @@ def opcode(code):
 
 class DCPU16:
     
-    def __init__(self, memory):
+    def __init__(self, memory, display):
+        
+        self.display = display
         self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001E)]
+        
         self.skip = False
         self.cycle = 0
         
@@ -183,6 +189,10 @@ class DCPU16:
         return arg1
     
     def run(self, debug=False, trace=False):
+        tick = 0
+        last_time = time.time()
+        last_cycle = self.cycle
+        
         while True:
             pc = self.memory[PC]
             w = self.memory[pc]
@@ -209,11 +219,25 @@ class DCPU16:
                 self.skip = False
             else:
                 op(arg1, arg2)
+                if 0x01 <= opcode <=0xB: # write to memory
+                    # tell the display about any writes, even if out of range
+                    # as this removes duplication
+                    self.display.update_memory(arg1, self.memory[arg1])
                 if trace:
                     self.dump_registers()
                     self.dump_stack()
             
+            tick += 1
+            if tick >= 100000:
+                print("%dkHz" % (int((self.cycle - last_cycle) / (time.time() - last_time)) / 1000))
+                last_time = time.time()
+                last_cycle = self.cycle
+                tick = 0
+            if tick % 1000 == 0:
+                self.display.redraw()
+            
             if debug:
+                self.display.redraw()
                 self.debugger_prompt()
     
     def debugger_prompt(self):
@@ -340,5 +364,8 @@ if __name__ == "__main__":
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
     
-    dcpu16 = DCPU16(program)
+    term = Terminal()
+    term.show()
+    dcpu16 = DCPU16(program, display=term)
     dcpu16.run(debug=args.debug, trace=args.trace)
+    term.quit()
