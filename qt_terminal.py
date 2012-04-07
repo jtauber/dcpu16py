@@ -14,12 +14,22 @@ class Terminal(QtGui.QWidget):
     def __init__(self):
         self.app = QtGui.QApplication(sys.argv)
         super(Terminal, self).__init__()
+        
         self.buffer = []
         for y in range(self.VSIZE):
             self.buffer.append([])
             for _ in range(self.HSIZE):
                 self.buffer[y].append(" ")
-        self.resize(self.WIDTH, self.HEIGHT)
+        
+        self.font = QtGui.QFont("Monospace", 10)
+        self.font.setStyleHint(QtGui.QFont.TypeWriter)
+        font_metrics = QtGui.QFontMetrics(self.font)
+        self.width = font_metrics.maxWidth() * self.HSIZE + 4
+        self.height = font_metrics.height() * self.VSIZE + 4
+        
+        self.resize(self.width, self.height)
+        self.setMinimumSize(self.width, self.height)
+        self.setMaximumSize(self.width, self.height)
         self.setWindowTitle("DCPU-16 terminal")
     
     def update_memory(self, address, value):
@@ -41,11 +51,11 @@ class Terminal(QtGui.QWidget):
         qp = QtGui.QPainter()
         qp.begin(self)
         
-        qp.fillRect(0, 0, self.WIDTH, self.HEIGHT, QtGui.QBrush(QtGui.QColor(0, 0, 0)))
+        qp.fillRect(0, 0, self.width, self.height, QtGui.QBrush(QtGui.QColor(0, 0, 0)))
         
         text = "\n".join("".join(line) for line in self.buffer)
         qp.setPen(QtGui.QColor(255, 255, 255))
-        qp.setFont(QtGui.QFont("Monospace", 10))
-        qp.drawText(1, 1, self.WIDTH, self.HEIGHT, Qt.AlignLeft | Qt.AlignTop, text)        
+        qp.setFont(self.font)
+        qp.drawText(1, 1, self.width, self.height, Qt.AlignLeft | Qt.AlignTop, text)        
         
         qp.end()
