@@ -133,7 +133,7 @@ class Terminal:
     def update_memory(self, address, value):
         if START_ADDRESS <= address <= START_ADDRESS + WIDTH * HEIGHT * 2:
             row, column = divmod(address - START_ADDRESS, WIDTH)
-            ch = value - 0x20
+            ch = (value % 0x80) - 0x20
             self.screen.blit(self.chargen[ch], (2 * (column * 7), 2 * (row * 8 + 1)))
     
     def show(self):
