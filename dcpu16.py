@@ -239,7 +239,10 @@ class DCPU16:
                 last_cycle = self.cycle
                 tick = 0
             if tick % 1000 == 0:
-                self.display.redraw()
+                try:
+                    self.display.redraw()
+                except SystemExit:
+                    break
             
             if debug:
                 self.display.redraw()

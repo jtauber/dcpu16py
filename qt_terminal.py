@@ -31,6 +31,9 @@ class Terminal(QtGui.QWidget):
         self.setMinimumSize(self.width, self.height)
         self.setMaximumSize(self.width, self.height)
         self.setWindowTitle("DCPU-16 terminal")
+        
+        self.app.setQuitOnLastWindowClosed(False)
+        self.closed = False
     
     def update_memory(self, address, value):
         if self.START_ADDRESS <= address < (self.START_ADDRESS + self.VSIZE * self.HSIZE):
@@ -40,7 +43,12 @@ class Terminal(QtGui.QWidget):
             char = chr(value & 0x00FF)
             self.buffer[line][col] = char
     
+    def closeEvent(self, e):
+        self.closed = True
+    
     def redraw(self):
+        if self.closed:
+            raise SystemExit
         self.update()
         self.app.processEvents()
     
