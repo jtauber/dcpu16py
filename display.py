@@ -4,6 +4,12 @@
 import pygame
 
 
+WIDTH = 40
+HEIGHT = 24
+
+START_ADDRESS = 0x8000
+
+
 class Display:
     
     # character patterns taken from the Apple ][ for now
@@ -107,11 +113,11 @@ class Display:
     ]
     
     def __init__(self):
-        self.screen = pygame.display.set_mode((560, 384)) # @@@ this is likely wrong
+        self.screen = pygame.display.set_mode((14 * WIDTH, 16 * HEIGHT))
         
         self.chargen = []
         for c in self.characters:
-            surface = pygame.Surface((14, 16)) # @@@ this is likely wrong
+            surface = pygame.Surface((14, 16))
             pixels = pygame.PixelArray(surface)
             off = (0, 0, 0)
             on = (0, 200, 0)
@@ -125,8 +131,8 @@ class Display:
             self.chargen.append(surface)
     
     def update(self, address, value):
-        if 0x8000 <= address <= 0x8FFF:
-            row, column = divmod(address - 0x8000, 32) # @@@ this is likely wrong
+        if START_ADDRESS <= address <= START_ADDRESS + WIDTH * HEIGHT * 2:
+            row, column = divmod(address - START_ADDRESS, WIDTH)
             ch = value - 0x20
             self.screen.blit(self.chargen[ch], (2 * (column * 7), 2 * (row * 8 + 1)))
     
