@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
+import importlib
 import inspect
 import struct
 import sys
 import time
-
-from null_terminal import Terminal
 
 
 try:
@@ -352,6 +351,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DCPU-16 emulator")
     parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode. This implies '--trace'")
     parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
+    parser.add_argument("--term", action="store", default="null", help="Terminal to use (e.g. null, pygame)")
     parser.add_argument("object_file", help="File with assembled DCPU binary")
     args = parser.parse_args()
     if args.debug:
@@ -364,7 +364,8 @@ if __name__ == "__main__":
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
     
-    term = Terminal()
+    terminal = importlib.import_module(args.term + "_terminal")
+    term = terminal.Terminal()
     term.show()
     dcpu16 = DCPU16(program, display=term)
     dcpu16.run(debug=args.debug, trace=args.trace)
