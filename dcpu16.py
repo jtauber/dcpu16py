@@ -346,8 +346,7 @@ Close emulator with Ctrl-D
     def dump_registers(self):
         print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
             self.memory[0x10000 + i]) for i in range(8)))
-        print(" ".join("%s=%04X" % (["PC", "SP", "O"][i - PC],
-            self.memory[i]) for i in [PC, SP, O]))
+        print("PC={0:04X} SP={1:04X} O={2:04X}".format(*[self.memory[i] for i in (PC, SP, O)]))
     
     def dump_stack(self):
         if self.memory[SP] == 0x0:
