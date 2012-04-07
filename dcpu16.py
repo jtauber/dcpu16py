@@ -31,7 +31,7 @@ class DCPU16:
         self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001E)]
         self.skip = False
         self.cycle = 0
-
+        
         self.debugger_breaks = set()
         self.debugger_in_continue = False
         
@@ -214,10 +214,10 @@ class DCPU16:
                 if trace:
                     self.dump_registers()
                     self.dump_stack()
-
+            
             if debug:
                 self.debugger_prompt()
-
+    
     def debugger_prompt(self):
         if not self.debugger_in_continue or self.memory[PC] in self.debugger_breaks:
             self.debugger_in_continue = False
@@ -264,7 +264,7 @@ Close emulator with Ctrl-D
                         raise ValueError("Invalid command!")
                 except ValueError as ex:
                     print(ex)
-
+    
     @staticmethod
     def debugger_parse_location(what):
         registers = "abcxyzij"
@@ -282,7 +282,7 @@ Close emulator with Ctrl-D
             if not 0 <= addr <= 0xFFFF:
                 raise ValueError("Invalid address!")
             return addr
-
+    
     def debugger_break(self, *addrs):
         breaks = set()
         for addr in addrs:
@@ -291,7 +291,7 @@ Close emulator with Ctrl-D
                 raise ValueError("Invalid address!")
             breaks.add(addr)
         self.debugger_breaks.update(breaks)
-
+    
     def debugger_clear(self, *addrs):
         breaks = set()
         for addr in addrs:
@@ -300,14 +300,14 @@ Close emulator with Ctrl-D
                 raise ValueError("Invalid address!")
             breaks.add(addr)
         self.debugger_breaks.difference_update(breaks)
-
+    
     def debugger_set(self, what, value):
         value = int(value, 16)
         if not 0 <= value <= 0xFFFF:
             raise ValueError("Invalid value!")
         addr = self.debugger_parse_location(what)
         self.memory[addr] = value
-
+    
     def debugger_get(self, what):
         addr = self.debugger_parse_location(what)
         value = self.memory[addr]
