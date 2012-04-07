@@ -27,7 +27,8 @@ contributed by Peter Waller. You'll need to `pip install pyparsing` to run it.
 * `--speed` outputs the speed the emulator is running at in kHz
 * `--term TERM` specifies a terminal to use for text output (currently `null` or `pygame`)
 
-I plan to work on a Forth implementation soon.
+I plan to work on an implementation of Forth on the DCPU-16 soon. Colour terminals and keyboard
+support are also planned.
 
 
 ## Examples
