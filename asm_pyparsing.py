@@ -197,7 +197,7 @@ def process_operand(o, lvalue=False):
             if not isinstance(l, basestring) and l < 0x20:
                 return 0x20 | l, None
             if l == "": raise invalid_op("this is a bug")
-            if isinstance(l, (int, long)) and not 0 <= l <= WORD_MAX:
+            if isinstance(l, int) and not 0 <= l <= WORD_MAX:
                 raise invalid_op("literal exceeds word size")
             return 0x1F, l
             
