@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 
-
+import argparse
 import inspect
 import struct
 import sys
-import argparse
+
 
 try:
     raw_input
 except NameError:
     raw_input = input
+
 
 # offsets into DCPU16.memory corresponding to addressing mode codes
 SP, PC, O = 0x1001B, 0x1001C, 0x1001D
