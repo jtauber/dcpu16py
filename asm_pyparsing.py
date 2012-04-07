@@ -79,7 +79,10 @@ def make_words(data):
     return [a << 8 | b for a, b in izip_longest(data[::2], data[1::2],
                                                   fillvalue=0)]
 def wordize_string(s, l, tokens):
-    return make_words([ord(c) for c in tokens.string])
+    bytes = [ord(c) for c in tokens.string]
+    # TODO(pwaller): possibly add syntax for packing string data?
+    packed = False
+    return make_words(bytes) if packed else bytes
 
 quoted_string = P.quotedString("string").addParseAction(P.removeQuotes).addParseAction(wordize_string)
 datum = quoted_string | numeric_literal
