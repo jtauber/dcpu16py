@@ -6,6 +6,9 @@ import struct
 import sys
 import argparse
 
+from display import Display
+
+
 try:
     raw_input
 except NameError:
@@ -27,8 +30,11 @@ def opcode(code):
 
 class DCPU16:
     
-    def __init__(self, memory):
+    def __init__(self, memory, display):
+        
+        self.display = display
         self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001E)]
+        
         self.skip = False
         self.cycle = 0
         
@@ -182,6 +188,7 @@ class DCPU16:
         return arg1
     
     def run(self, debug=False, trace=False):
+        tick = 0
         while True:
             pc = self.memory[PC]
             w = self.memory[pc]
@@ -215,7 +222,13 @@ class DCPU16:
                     self.dump_registers()
                     self.dump_stack()
             
+            tick += 1
+            if tick >= 1024:
+                self.display.flip()
+                tick = 0
+            
             if debug:
+                self.display.flip()
                 self.debugger_prompt()
     
     def debugger_prompt(self):
@@ -326,7 +339,7 @@ Close emulator with Ctrl-D
             print("Stack: [" + " ".join("%04X" % self.memory[m] for m in range(self.memory[SP], 0x10000)) + "]")
     
     def update_video(self, location):
-        print("%04X: %04X" % (location, self.memory[location]))
+        self.display.update(location, self.memory[location])
 
 
 if __name__ == "__main__":
@@ -345,5 +358,5 @@ if __name__ == "__main__":
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
     
-    dcpu16 = DCPU16(program)
+    dcpu16 = DCPU16(program, display=Display())
     dcpu16.run(debug=args.debug, trace=args.trace)
