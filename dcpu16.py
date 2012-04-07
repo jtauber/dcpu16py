@@ -5,6 +5,7 @@ import inspect
 import struct
 import sys
 import argparse
+import time
 
 from display import Display
 
@@ -189,6 +190,9 @@ class DCPU16:
     
     def run(self, debug=False, trace=False):
         tick = 0
+        last_time = time.time()
+        last_cycle = self.cycle
+        
         while True:
             pc = self.memory[PC]
             w = self.memory[pc]
@@ -223,9 +227,13 @@ class DCPU16:
                     self.dump_stack()
             
             tick += 1
-            if tick >= 1024:
-                self.display.flip()
+            if tick >= 100000:
+                print("%dkHz" % (int((self.cycle - last_cycle) / (time.time() - last_time)) / 1000))
+                last_time = time.time()
+                last_cycle = self.cycle
                 tick = 0
+            if tick % 1000 == 0:
+                self.display.flip()
             
             if debug:
                 self.display.flip()
