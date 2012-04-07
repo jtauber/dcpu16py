@@ -9,6 +9,7 @@ class Terminal:
 
     def __init__(self):
         self.win = curses.initscr()
+        curses.curs_set(0)
         curses.start_color()
         curses.use_default_colors()
 
