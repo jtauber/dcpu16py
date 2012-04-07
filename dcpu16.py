@@ -7,6 +7,8 @@ import struct
 import sys
 import time
 
+import disasm
+
 
 try:
     raw_input
@@ -191,6 +193,8 @@ class DCPU16:
         tick = 0
         last_time = time.time()
         last_cycle = self.cycle
+        if trace:
+            disassembler = disasm.Disassembler(self.memory)
         
         while True:
             pc = self.memory[PC]
@@ -201,7 +205,8 @@ class DCPU16:
             b, a = divmod(operands, 64)
             
             if trace:
-                print("(%08X) %04X: %04X" % (self.cycle, pc, w))
+                disassembler.offset = pc
+                print("(%08X) %s" % (self.cycle, disassembler.next_instruction()))
             
             if opcode == 0x00:
                 arg1 = None

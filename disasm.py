@@ -35,25 +35,28 @@ class Disassembler:
         else:
             return "0x%02x" % (operand % 0x20)
     
+    def next_instruction(self):
+        offset = self.offset
+        w = self.next_word()
+            
+        operands, opcode = divmod(w, 16)
+        b, a = divmod(operands, 64)
+            
+        if opcode == 0x00:
+            if a == 0x01:
+                first = "JSR"
+            else:
+                return
+        else:
+            first = "%s %s," % (INSTRUCTIONS[opcode], self.format_operand(a))
+            
+        asm = "%s %s" % (first, self.format_operand(b))
+        binary = " ".join("%04x" % word for word in self.program[offset:self.offset])
+        return "%-40s ; %04x: %s" % (asm, offset, binary)
+        
     def run(self):
         while self.offset < len(self.program):
-            offset = self.offset
-            w = self.next_word()
-            
-            operands, opcode = divmod(w, 16)
-            b, a = divmod(operands, 64)
-            
-            if opcode == 0x00:
-                if a == 0x01:
-                    first = "JSR"
-                else:
-                    continue
-            else:
-                first = "%s %s," % (INSTRUCTIONS[opcode], self.format_operand(a))
-            
-            asm = "%s %s" % (first, self.format_operand(b))
-            binary = " ".join("%04x" % word for word in self.program[offset:self.offset])
-            print("%-40s ; %04x: %s" % (asm, offset, binary))
+            print(self.next_instruction())
 
 
 if __name__ == "__main__":
