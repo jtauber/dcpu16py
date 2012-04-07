@@ -9,6 +9,7 @@ class Terminal(QtGui.QWidget):
     HEIGHT = 378
     WIDTH = 644
     BUFFER_SIZE = VSIZE * HSIZE
+    START_ADDRESS = 0x8000
     
     def __init__(self):
         self.app = QtGui.QApplication(sys.argv)
@@ -21,12 +22,13 @@ class Terminal(QtGui.QWidget):
         self.resize(self.WIDTH, self.HEIGHT)
         self.setWindowTitle("DCPU-16 terminal")
     
-    def update_buffer(self, location, value):
-        index = location - 0x8000
-        line = index // self.HSIZE
-        col = index % self.HSIZE
-        char = chr(value & 0x00FF)
-        self.buffer[line][col] = char
+    def update_memory(self, address, value):
+        if self.START_ADDRESS <= address < (self.START_ADDRESS + self.VSIZE * self.HSIZE):
+            index = address - self.START_ADDRESS
+            line = index // self.HSIZE
+            col = index % self.HSIZE
+            char = chr(value & 0x00FF)
+            self.buffer[line][col] = char
     
     def redraw(self):
         self.update()
