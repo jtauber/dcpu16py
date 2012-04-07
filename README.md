@@ -9,7 +9,7 @@ do a DCPU-16 implementation in Python too :-)
 
 ## Status
 
-Runs a number of example program successfully. Should be feature-complete at the CPU level.
+Runs a number of example programs successfully. Should be feature-complete at the CPU level.
 
 A dissassembler and (two) assemblers are also included.
 
