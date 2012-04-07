@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
+import importlib
 import inspect
 import struct
 import sys
 import time
-
-from pygame_terminal import Terminal
 
 
 try:
@@ -188,7 +187,7 @@ class DCPU16:
             arg1 = self.memory[arg1]
         return arg1
     
-    def run(self, debug=False, trace=False):
+    def run(self, debug=False, trace=False, show_speed=False):
         tick = 0
         last_time = time.time()
         last_cycle = self.cycle
@@ -229,7 +228,8 @@ class DCPU16:
             
             tick += 1
             if tick >= 100000:
-                print("%dkHz" % (int((self.cycle - last_cycle) / (time.time() - last_time)) / 1000))
+                if show_speed:
+                    print("%dkHz" % (int((self.cycle - last_cycle) / (time.time() - last_time)) / 1000))
                 last_time = time.time()
                 last_cycle = self.cycle
                 tick = 0
@@ -352,6 +352,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="DCPU-16 emulator")
     parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode. This implies '--trace'")
     parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
+    parser.add_argument("-s", "--speed", action="store_const", const=True, default=False, help="Print speed the emulator is running at in kHz")
+    parser.add_argument("--term", action="store", default="null", help="Terminal to use (e.g. null, pygame)")
     parser.add_argument("object_file", help="File with assembled DCPU binary")
     args = parser.parse_args()
     if args.debug:
@@ -364,8 +366,9 @@ if __name__ == "__main__":
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
     
-    term = Terminal()
+    terminal = importlib.import_module(args.term + "_terminal")
+    term = terminal.Terminal()
     term.show()
     dcpu16 = DCPU16(program, display=term)
-    dcpu16.run(debug=args.debug, trace=args.trace)
+    dcpu16.run(debug=args.debug, trace=args.trace, show_speed=args.speed)
     term.quit()
