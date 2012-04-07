@@ -239,7 +239,10 @@ class DCPU16:
                 last_cycle = self.cycle
                 tick = 0
             if tick % 1000 == 0:
-                self.display.redraw()
+                try:
+                    self.display.redraw()
+                except SystemExit:
+                    break
             
             if debug:
                 self.display.redraw()
@@ -377,6 +380,7 @@ if __name__ == "__main__":
     dcpu16 = DCPU16(program, display=term)
     try:
         dcpu16.run(debug=args.debug, trace=args.trace, show_speed=args.speed)
-        term.quit()
     except KeyboardInterrupt:
+        pass
+    finally:
         term.quit()
