@@ -17,8 +17,9 @@ import logging; log = logging.getLogger("dcpu16_asm")
 log.setLevel(logging.DEBUG)
 
 import argparse
-import struct
 import os
+import struct
+import sys
 
 import pyparsing as P
 
@@ -52,13 +53,13 @@ numeric_literal = hex_literal | dec_literal
 literal = numeric_literal | identifier
 
 
-instruction = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB JSR", caseless=True)
+opcode = P.oneOf("SET ADD SUB MUL DIV MOD SHL SHR AND BOR XOR IFE IFN IFG IFB JSR", caseless=True)
 basic_operand = P.Group(register("register") | stack_op("stack_op") | literal("literal"))
 indirect_expr = P.Group(literal("literal") + P.Literal("+") + register("register"))
 
 register.addParseAction(P.upcaseTokens)
 stack_op.addParseAction(P.upcaseTokens)
-instruction.addParseAction(P.upcaseTokens)
+opcode.addParseAction(P.upcaseTokens)
 
 indirection_content = (indirect_expr("expr") | basic_operand("basic"))
 indirection = P.Group(
@@ -84,7 +85,7 @@ def parse_data(string, loc, tokens):
     return result
 
 datalist = P.commaSeparatedList.copy().setParseAction(parse_data)
-data = P.CaselessKeyword("DAT")("instruction") + P.Group(datalist)("data")
+data = P.CaselessKeyword("DAT")("opcode") + P.Group(datalist)("data")
 
 line = P.Forward()
 
@@ -98,7 +99,7 @@ macro = (
 )
 
 statement = P.Group(
-    (instruction("instruction") +
+    (opcode("opcode") +
      P.Group(operand)("first") +
      P.Optional(P.Literal(",").suppress() + P.Group(operand)("second"))
     ) 
@@ -223,17 +224,17 @@ def codegen(source, input_filename="<unknown>"):
                         "macro {0!r}".format(s.macro_name))
             continue
         
-        if s.instruction == "DAT":
+        if s.opcode == "DAT":
             program.extend(s.data)
             continue
         
-        if s.instruction == "JSR":
+        if s.opcode == "JSR":
             o = 0x00
             a, x = 0x01, None
             b, y = process_operand(s.first)
             
         else:
-            o = OPCODES[s.instruction]
+            o = OPCODES[s.opcode]
             a, x = process_operand(s.first, lvalue=True)
             b, y = process_operand(s.second)
             
@@ -269,8 +270,11 @@ def main():
         log.addHandler(handler)
         if not DEBUG: handler.setLevel(logging.INFO)
     
-    with open(args.source) as fd:
-        program = codegen(fd.read(), args.source)
+    if args.source == "-":
+        program = codegen(sys.stdin.read(), "<stdin>")
+    else:
+        with open(args.source) as fd:
+            program = codegen(fd.read(), args.source)
     
     if program is None:
         log.fatal("No program produced.")
