@@ -10,7 +10,7 @@ HEIGHT = 24
 START_ADDRESS = 0x8000
 
 
-class Display:
+class Terminal:
     
     # character patterns taken from the Apple ][ for now
     characters = [
@@ -130,11 +130,14 @@ class Display:
             del pixels
             self.chargen.append(surface)
     
-    def update(self, address, value):
+    def show(self):
+        pass
+    
+    def update_memory(self, address, value):
         if START_ADDRESS <= address <= START_ADDRESS + WIDTH * HEIGHT * 2:
             row, column = divmod(address - START_ADDRESS, WIDTH)
             ch = value - 0x20
             self.screen.blit(self.chargen[ch], (2 * (column * 7), 2 * (row * 8 + 1)))
     
-    def flip(self):
+    def redraw(self):
         pygame.display.flip()

@@ -6,7 +6,7 @@ import struct
 import sys
 import time
 
-from display import Display
+from pygame_terminal import Terminal
 
 
 try:
@@ -219,9 +219,10 @@ class DCPU16:
                 self.skip = False
             else:
                 op(arg1, arg2)
-                if 0x01 <= opcode <=0xB:
-                    if 0x8000 <= arg1 <= 0x8FFF:
-                        self.update_video(arg1)
+                if 0x01 <= opcode <=0xB: # write to memory
+                    # tell the display about any writes, even if out of range
+                    # as this removes duplication
+                    self.display.update_memory(arg1, self.memory[arg1])
                 if trace:
                     self.dump_registers()
                     self.dump_stack()
@@ -233,10 +234,10 @@ class DCPU16:
                 last_cycle = self.cycle
                 tick = 0
             if tick % 1000 == 0:
-                self.display.flip()
+                self.display.redraw()
             
             if debug:
-                self.display.flip()
+                self.display.redraw()
                 self.debugger_prompt()
     
     def debugger_prompt(self):
@@ -345,9 +346,6 @@ Close emulator with Ctrl-D
             print("Stack: []")
         else:
             print("Stack: [" + " ".join("%04X" % self.memory[m] for m in range(self.memory[SP], 0x10000)) + "]")
-    
-    def update_video(self, location):
-        self.display.update(location, self.memory[location])
 
 
 if __name__ == "__main__":
@@ -366,5 +364,8 @@ if __name__ == "__main__":
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
     
-    dcpu16 = DCPU16(program, display=Display())
+    term = Terminal()
+    term.show()
+    dcpu16 = DCPU16(program, display=term)
     dcpu16.run(debug=args.debug, trace=args.trace)
+    term.quit()
