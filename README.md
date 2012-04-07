@@ -26,7 +26,7 @@ contributed by Peter Waller. You'll need to `pip install pyparsing` to run it.
 * `--debug` runs the emulate in debug mode, enabling you to step through each instruction
 * `--trace` dumps the registers and stack after every step (implied by `--debug`)
 * `--speed` outputs the speed the emulator is running at in kHz
-* `--term TERM` specifies a terminal to use for text output (current `null` or `pygame`)
+* `--term TERM` specifies a terminal to use for text output (currently `null` or `pygame`)
 
 I plan to work on a Forth implementation soon.
 
