@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
-
-<<<<<<< HEAD
-import os
-import sys
-=======
->>>>>>> master
+import argparse
 import inspect
+import os
 import struct
 import sys
-import argparse
+
 
 try:
     raw_input
