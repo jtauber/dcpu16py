@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>DCPU-16|py by jtauber</title>
+    
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>DCPU-16|py</h1>
+        <p>A Python implementation of the DCPU-16. Complete with assembler, disassembler, debugger and video terminal implementations.</p>
+        <p class="view"><a href="https://github.com/jtauber/dcpu16py">View the Project on GitHub <small>jtauber/dcpu16py</small></a></p>
+        <ul>
+          <li><a href="https://github.com/jtauber/dcpu16py/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/jtauber/dcpu16py/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/jtauber/dcpu16py">Fork On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>A Python implementation of Notch's DCPU-16.</h1>
+
+<p>Complete with assembler, disassembler, debugger and video terminal implementations.</p>
+
+<p>See <a href="http://0x10c.com/doc/dcpu-16.txt">http://0x10c.com/doc/dcpu-16.txt</a> for specification of the CPU.</p>
+
+<p>Notch apparently started doing a 6502 emulator first. Given I did one in
+Python <a href="https://github.com/jtauber/applepy">https://github.com/jtauber/applepy</a> it only seems fitting I now
+do a DCPU-16 implementation in Python too :-)</p>
+
+<h2>Status</h2>
+
+<p>Runs a number of example programs successfully. Should be feature-complete at the CPU level.</p>
+
+<p>A dissassembler and (two) assemblers are also included as well as the emulator. The emulator
+includes a debugger. </p>
+
+<ul>
+<li>
+<code>./asm.py example.asm example.obj</code> will assemble Notch's example to object code</li>
+<li>
+<code>./disasm.py example.obj</code> will disassemble the given object code</li>
+<li>
+<code>./dcpu16.py example.obj</code> will execute it (but won't show anything without extra options)</li>
+</ul><p>There is also an experimental pyparsing-based assembler <code>./asm_pyparsing.py</code>
+contributed by Peter Waller. You'll need to <code>pip install pyparsing</code> to run it.</p>
+
+<p><code>./dcpu16.py</code> takes a number of options:</p>
+
+<ul>
+<li>
+<code>--debug</code> runs the emulate in debug mode, enabling you to step through each instruction</li>
+<li>
+<code>--trace</code> dumps the registers and stack after every step (implied by <code>--debug</code>)</li>
+<li>
+<code>--speed</code> outputs the speed the emulator is running at in kHz</li>
+<li>
+<code>--term TERM</code> specifies a terminal to use for text output (<code>null</code>, <code>debug</code>, <code>curses</code>, <code>pygame</code> or <code>qt</code>)</li>
+</ul><p>I plan to work on an implementation of Forth on the DCPU-16 soon. Colour terminals and keyboard
+support are also planned.</p>
+
+<h2>Examples</h2>
+
+<p>Now see <a href="https://github.com/jtauber/DCPU-16-Examples">https://github.com/jtauber/DCPU-16-Examples</a>
+(although my assembler and emulator don't necessarily support everything there yet)</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/jtauber">jtauber</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+  </body>
+</html>
