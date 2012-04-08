@@ -1,5 +1,6 @@
 from emuplugin import BasePlugin
 import importlib
+import sys
 
 START_ADDRESS = 0x8000
 
@@ -46,6 +47,7 @@ class TerminalPlugin(BasePlugin):
             return
         BasePlugin.__init__(self)
         self.i = 0
+        sys.path.append("./terminals/")
         try:
             terminal = importlib.import_module(args.term + "_terminal")
         except ImportError:
