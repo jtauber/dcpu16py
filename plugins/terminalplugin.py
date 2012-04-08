@@ -1,5 +1,7 @@
 from emuplugin import BasePlugin
 import importlib
+import sys
+import time
 
 START_ADDRESS = 0x8000
 
@@ -12,21 +14,16 @@ class TerminalPlugin(BasePlugin):
     
     def tick(self, cpu):
         """
-            Update the display every 100,000hz or always if debug is on
+            Update the display every .1s or always if debug is on
         """
-        if self.i >= 100000:
-            self.i = 0
-        if self.debug or self.i % 1000 == 0:
+        if self.debug or not self.time or (time.time() - self.time >= .1):
+            self.time = time.time()
             self.term.redraw()
-        self.i += 1
     
     def memory_changed(self, cpu, address, value):
         """
             Inform the terminal that the memory is updated
         """
-        if not (self.term.width and self.term.height):
-            # Null terminal
-            return
         if START_ADDRESS <= address <= START_ADDRESS + self.term.width * self.term.height:
             row, column = divmod(address - START_ADDRESS, self.term.width)
             ch = value % 0x0080
@@ -44,8 +41,12 @@ class TerminalPlugin(BasePlugin):
         """
             Create a terminal based on the term argument
         """
+        if args.term == "null":
+            self.loaded = False
+            return
         BasePlugin.__init__(self)
-        self.i = 0
+        self.time = None
+        sys.path.append("./terminals/")
         try:
             terminal = importlib.import_module(args.term + "_terminal")
         except ImportError:
