@@ -37,7 +37,7 @@ class Terminal:
             pair = 0
             if color:
                 pair = self.get_color(*color)
-            self.win.addch(row, column, character, curses.color_pair(pair))
+            self.win.addch(row, column, character, curses.A_BOLD|curses.color_pair(pair))
         except curses.error:
             pass
     
