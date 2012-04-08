@@ -10,6 +10,7 @@ class Terminal:
     def __init__(self, args):
         self.width = WIDTH
         self.height = HEIGHT
+        self.keys = []
         pygame.font.init()
         self.font = pygame.font.match_font("Monospace,dejavusansmono")
         self.font = pygame.font.get_default_font() if not self.font else self.font
@@ -35,6 +36,13 @@ class Terminal:
     
     def show(self):
         pass
+    
+    def updatekeys(self):
+        events = pygame.event.get(pygame.KEYDOWN)
+        for e in events:
+            key = e.unicode
+            if key:
+                self.keys.insert(0, ord(e.unicode))
     
     def redraw(self):
         pygame.display.flip()

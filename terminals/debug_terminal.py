@@ -4,6 +4,7 @@ HEIGHT = 16
 class Terminal:
     width = WIDTH
     height = HEIGHT
+    keys = []
     
     def __init__(self, args):
         pass
@@ -12,6 +13,9 @@ class Terminal:
         print("TERMINAL (%d,%d:'%s') %s" % (column, row, chr(character), str(color)))
     
     def show(self):
+        pass
+    
+    def updatekeys(self):
         pass
     
     def redraw(self):

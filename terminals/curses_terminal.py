@@ -21,9 +21,12 @@ class Terminal:
             print("Curses conflicts with debugger")
             raise SystemExit
         self.win = curses.initscr()
+        self.win.nodelay(1)
         curses.curs_set(0)
+        curses.noecho()
         self.width = WIDTH
         self.height = HEIGHT
+        self.keys = []
         self.setup_colors()
     
     def get_color(self, fg, bg):
@@ -48,6 +51,15 @@ class Terminal:
     
     def show(self):
         pass
+    
+    def updatekeys(self):
+        try:
+            while(True):
+                char = self.win.getkey()
+                if len(char) == 1:
+                    self.keys.insert(0, ord(char))
+        except curses.error:
+            pass
     
     def redraw(self):
         self.win.refresh()
