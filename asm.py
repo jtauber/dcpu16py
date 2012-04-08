@@ -124,18 +124,17 @@ else:
 
 def report_error(filename, lineno, error):
     print("%s:%i: %s" % (input_filename, lineno, error), file=sys.stderr)
+    sys.exit(1)
 
 
 for lineno, line in enumerate(open(input_filename), start=1):
     mo = line_regex.match(line)
     if mo is None:
         report_error(input_filename, lineno, "Syntax error")
-        break
     
     token_dict = mo.groupdict()
     if token_dict is None:
         report_error(input_filename, lineno, "Syntax error")
-        break
     
     if token_dict["label"]:
         labels[token_dict["label"]] = len(program)
