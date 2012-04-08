@@ -5,6 +5,8 @@ WIDTH = 40
 HEIGHT = 24
 
 class Terminal:
+    style_bold = False
+    
     def setup_colors(self):
         curses.start_color()
         curses.use_default_colors()
@@ -37,7 +39,10 @@ class Terminal:
             pair = 0
             if color:
                 pair = self.get_color(*color)
-            self.win.addch(row, column, character, curses.A_BOLD|curses.color_pair(pair))
+            color = curses.color_pair(pair)
+            if self.style_bold:
+                color |= curses.A_BOLD
+            self.win.addch(row, column, character, color)
         except curses.error:
             pass
     
