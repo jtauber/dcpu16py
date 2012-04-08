@@ -5,6 +5,7 @@ import subprocess
 
 ASSEMBLY_OUTPUT = "__test_output.obj"
 SOURCE_DIR = "examples"
+BINARY_DIR = "test_binaries"
 
 def tearDownModule():
     if os.path.exists(ASSEMBLY_OUTPUT):
@@ -15,7 +16,13 @@ def example(name):
 
 def check_path(assembler, path):
     code = subprocess.call([assembler, path, ASSEMBLY_OUTPUT])
-    nose.assert_equal(code, 0, "({0})".format(assembler))
+    nose.assert_equal(code, 0, assembler)
+    
+    assert path.endswith(".asm")
+    binary = os.path.join(BINARY_DIR, os.path.basename(path)[:-4] + ".bin")
+    if os.path.exists(binary):
+        with open(ASSEMBLY_OUTPUT, "rb") as testing, open(binary, "rb") as tested:
+            nose.assert_equal(testing.read(), tested.read(), assembler)
 
 
 # asm.py
