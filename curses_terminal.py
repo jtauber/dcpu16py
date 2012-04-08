@@ -14,7 +14,10 @@ class Terminal:
         self.color_index = 1
         self.win.bkgd(curses.color_pair(0))
     
-    def __init__(self):
+    def __init__(self, args):
+        if args.debug:
+            print("Curses conflicts with debugger")
+            raise SystemExit
         self.win = curses.initscr()
         curses.curs_set(0)
         self.width = WIDTH

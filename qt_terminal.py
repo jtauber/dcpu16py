@@ -13,7 +13,7 @@ class Terminal(QtGui.QWidget):
     
     COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
     
-    def __init__(self):
+    def __init__(self, args):
         self.width = self.VSIZE
         self.height = self.HSIZE
         self.app = QtGui.QApplication(sys.argv)

@@ -7,7 +7,7 @@ class Terminal:
     
     COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
     
-    def __init__(self):
+    def __init__(self, args):
         self.width = WIDTH
         self.height = HEIGHT
         pygame.font.init()

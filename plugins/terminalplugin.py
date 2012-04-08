@@ -48,7 +48,7 @@ class TerminalPlugin(BasePlugin):
         self.i = 0
         terminal = importlib.import_module(args.term + "_terminal")
         self.debug = args.debug
-        self.term = terminal.Terminal()
+        self.term = terminal.Terminal(args)
         self.name += "-%s" % args.term
         self.term.show()
 
