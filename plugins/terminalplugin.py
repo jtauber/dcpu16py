@@ -46,7 +46,11 @@ class TerminalPlugin(BasePlugin):
         """
         BasePlugin.__init__(self)
         self.i = 0
-        terminal = importlib.import_module(args.term + "_terminal")
+        try:
+            terminal = importlib.import_module(args.term + "_terminal")
+        except ImportError:
+            print("Terminal %s not found" % args.term)
+            raise SystemExit
         self.debug = args.debug
         self.term = terminal.Terminal(args)
         self.name += "-%s" % args.term
