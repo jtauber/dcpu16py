@@ -31,7 +31,7 @@ class DebuggerPlugin(BasePlugin):
                 except EOFError:
                     # Ctrl-D
                     print("")
-                    sys.exit()
+                    raise SystemExit
                 try:
                     if not command or command[0] in ("step", "st"):
                         break
