@@ -284,8 +284,6 @@ Close emulator with Ctrl-D
                             raise ValueError("Break command takes at least 1 parameter!")
                         self.debugger_break(*command[1:])
                     elif command[0] in ("clear", "cl"):
-                        if len(command) < 2:
-                            raise ValueError("Clear command takes at least 1 parameter!")
                         self.debugger_clear(*command[1:])
                     elif command[0] in ("continue", "cont", "c"):
                         self.debugger_in_continue = True
@@ -323,13 +321,16 @@ Close emulator with Ctrl-D
         self.debugger_breaks.update(breaks)
     
     def debugger_clear(self, *addrs):
-        breaks = set()
-        for addr in addrs:
-            addr = int(addr, 16)
-            if not 0 <= addr <= 0xFFFF:
-                raise ValueError("Invalid address!")
-            breaks.add(addr)
-        self.debugger_breaks.difference_update(breaks)
+        if not addrs:
+            self.debugger_breaks = set()
+        else:
+            breaks = set()
+            for addr in addrs:
+                addr = int(addr, 16)
+                if not 0 <= addr <= 0xFFFF:
+                    raise ValueError("Invalid address!")
+                breaks.add(addr)
+            self.debugger_breaks.difference_update(breaks)
     
     def debugger_set(self, what, value):
         value = int(value, 16)
@@ -346,8 +347,7 @@ Close emulator with Ctrl-D
     def dump_registers(self):
         print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
             self.memory[0x10000 + i]) for i in range(8)))
-        print(" ".join("%s=%04X" % (["PC", "SP", "O"][i - PC],
-            self.memory[i]) for i in [PC, SP, O]))
+        print("PC={0:04X} SP={1:04X} O={2:04X}".format(*[self.memory[i] for i in (PC, SP, O)]))
     
     def dump_stack(self):
         if self.memory[SP] == 0x0:
