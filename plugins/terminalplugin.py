@@ -24,9 +24,6 @@ class TerminalPlugin(BasePlugin):
         """
             Inform the terminal that the memory is updated
         """
-        if not (self.term.width and self.term.height):
-            # Null terminal
-            return
         if START_ADDRESS <= address <= START_ADDRESS + self.term.width * self.term.height:
             row, column = divmod(address - START_ADDRESS, self.term.width)
             ch = value % 0x0080
@@ -44,6 +41,9 @@ class TerminalPlugin(BasePlugin):
         """
             Create a terminal based on the term argument
         """
+        if args.term == "null":
+            self.loaded = False
+            return
         BasePlugin.__init__(self)
         self.i = 0
         try:
