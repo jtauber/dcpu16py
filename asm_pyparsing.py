@@ -22,6 +22,7 @@ import struct
 import sys
 
 import pyparsing as P
+from collections import defaultdict
 
 # Replace the debug actions so that the results go to the debug log rather
 # than stdout, so that the output can be usefully piped.
@@ -263,59 +264,120 @@ def codegen(source, input_filename="<unknown>"):
     labels = {}
     macros = {}
     program = []
+    # Number of times a given macro has been called so that we can generate
+    # unique labels
+    n_macro_calls = defaultdict(int)
     
     def process_macro_definition(statement):
         log.debug("Macro definition: {0}".format(statement.asXML()))
         macros[statement.name] = statement
         
-    def process_macro_call(statement):
+    def process_macro_call(offset, statement, context=""):
+        log.debug("--------------")
         log.debug("Macro call: {0}".format(statement.asXML()))
+        log.debug("--------------")
+        
         macroname = statement.name
         macro = macros.get(macroname, None)
+        n_macro_calls[macroname] += 1
+        context = context + macroname + str(n_macro_calls[macroname])
+        
         if not macro:
             raise RuntimeError("Call to undefined macro: {0}".format(macroname))
-        
-        log.debug("Macrodef args: {0!r}".format(macro.args))
-        log.debug("Macrouse args: {0!r}".format(statement.args))
         
         assert len(macro.args) == len(statement.args), (
             "Wrong number of arguments to macro call {0!r}".format(macroname))
         
         # TODO(pwaller): Check for collisions between argument name and code 
-        # label
-        args = dict(zip(macro.args, statement.args))
-        #for argdef, argvalue in zip(macro.args, statement.args):
-            #log.debug("argdef = {0} argvalue = {1}".format(argdef, argvalue))
-            #args[argdef] = argvalue
+        #                label
+        args = {}
         
-        log.debug("Populated args: {0}".format(args))
+        log.debug("Populated args:")
+        for name, arg in zip(macro.args, statement.args):
+            args[name] = arg
+            log.debug("  - {0}: {1}".format(name, arg)) 
          
-        statements = []
+        lines = []
         
-        # Replace label literals which are macro arguments with their values
-        for s in macro.statements:
-            if not s: continue
-            statement = s.copy()
+        for l in macro.lines:
+            new_line = l.copy()
+            s = l.statement
+            if s:
+                new_statement = s.copy()
+                new_line["statement"] = new_statement
+            #if l.label: new_line["label"] = context + l.label
+            
+            # Replace literals whose names are macro arguments
+            # also, substitute labels with (context, label).
+            # Resolution of a label happens later by first searching for a label
+            # called `context + label`, and if it doesn't exist `label` is used.
             if s and s.first and s.first.basic and s.first.basic.literal:
                 if s.first.basic.literal in args:
-                    statement["first"] = args[s.first.basic.literal]
+                    new_statement["first"] = args[s.first.basic.literal]
+                elif isinstance(s.first.basic.literal, basestring):
+                    new_basic = s.first.basic.copy()
+                    new_basic["literal"] = context, s.first.basic.literal
+                    new_op = new_statement.first.copy()
+                    new_op["basic"] = new_basic
+                    new_statement["first"] = new_op
+                    
             if s and s.second and s.second.basic and s.second.basic.literal:
                 if s.second.basic.literal in args:
-                    n = s.second.basic.literal
-                    log.debug("REPLACING! {0} = {1}".format(n, args[n]))
-                    statement.second.basic.pop("literal")
-                    statement.second["basic"] = args[n]
-            statements.append(statement)
+                    new_statement["second"] = args[s.second.basic.literal]
+                elif isinstance(s.second.basic.literal, basestring):
+                    new_basic = s.second.basic.copy()
+                    new_basic["literal"] = context, s.second.basic.literal
+                    new_op = new_statement.second.copy()
+                    new_op["basic"] = new_basic
+                    new_statement["second"] = new_op
+                    
+            # Replace macro call arguments
+            if s and s.macro_call:
+                new_macro_call = s.macro_call.copy()
+                new_statement["macro_call"] = new_macro_call
+                new_macro_call_args = s.macro_call.args.copy()
+                new_statement.macro_call["args"] = new_macro_call_args
+                for i, arg in enumerate(s.macro_call.args):
+                    if arg.basic.literal not in args:
+                        continue
+                    new_macro_call_args[i] = args[arg.basic.literal]
+                
+                        
+            lines.append(new_line)
         
-        log.debug("Populated macro: {0}".format(P.ParseResults(statements).asXML()))
-        log.debug(" statement.second = {0}".format(statements[0].second))
+        log.debug("Populated macro: {0}"
+                  .format("\n".join(l.dump() for l in lines)))
+        
         # Do code generation
         code = []
-        for s in statements:
-            code.extend(generate(s))
+        for l in lines:
+            a = generate(offset + len(code), l, context)
+            log.debug("Codegen for statement: {0}".format(l.asXML()))
+            log.debug("  Code: {0}".format(a))
+            code.extend(a)
         return code
         
-    def generate(s):
+    def generate(offset, line, context=""):
+        log.debug("Interpreting element {0}: {1}".format(i, line))
+        if line.label:
+            label = context + line.label
+            if label in labels:
+                # TODO(pwaller): Line indications
+                msg = "Duplicate label definition! {0}".format(label)
+                log.fatal(msg)
+                raise RuntimeError(msg)
+            labels[label] = offset
+            
+        s = line.statement
+        if not s: return []
+        
+        if s.macro_definition:
+            process_macro_definition(s.macro_definition)
+            return []
+        elif s.macro_call:
+            return process_macro_call(offset, s.macro_call, context)
+            
+        log.debug("Generating for {0}".format(s.asXML(formatted=False)))
         if s.opcode == "DAT":
             return s.data
         
@@ -336,30 +398,25 @@ def codegen(source, input_filename="<unknown>"):
         return code
     
     for i, line in enumerate(parsed):
-        log.debug("Interpreting element {0}: {1}".format(i, line))
-        if line.label:
-            if line.label in labels:
-                # TODO(pwaller): Line indications
-                log.fatal("Duplicate label definition! {0}".format(line.label))
-                return None
-            labels[line.label] = len(program)
-            
-        s = line.statement
-        if not s: continue
-        
-        if s.macro_definition:
-            process_macro_definition(s.macro_definition)
-            continue
-        elif s.macro_call:
-            program.extend(process_macro_call(s.macro_call))
-            continue
-        
-        program.extend(generate(s))
-        
+        program.extend(generate(len(program), line))
+    
+    log.debug("Labels: {0}".format(labels))
+    
+    log.debug("program: {0}".format(program))
+    
     # Substitute labels
     for i, c in enumerate(program):
         if isinstance(c, basestring):
+            if c not in labels:
+                raise RuntimeError("Undefined label used: {0}".format(c))
             program[i] = labels[c]
+        elif isinstance(c, tuple):
+            context, label = c
+            if context + label in labels:
+                label = context + label
+            if label not in labels:
+                raise RuntimeError("Undefined label used: {0}".format(c))
+            program[i] = labels[label]
     
     # Turn words into bytes
     result = bytes()
