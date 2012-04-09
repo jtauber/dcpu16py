@@ -116,19 +116,18 @@ data = P.CaselessKeyword("DAT")("opcode") + P.Group(datalist)("data")
 
 line = P.Forward()
 
-#commasepitem = P.Combine(P.OneOrMore(Word(_noncomma) + Optional( Word(" \t") +  ~Literal(",") + ~LineEnd() ) ) ).streamline()
 macro_definition_args = P.Group(P.delimitedList(P.Optional(identifier("arg"))))("args")
 
 macro_definition = P.Group(
     P.CaselessKeyword("#macro").suppress()
     + identifier("name")
     + sandwich("()", macro_definition_args)
-    + sandwich("{}", P.Group(P.OneOrMore(line))("statements"))
+    + sandwich("{}", P.Group(P.OneOrMore(line))("lines"))
 )("macro_definition")
 
 macro_argument = operand | datum
 
-macro_call_args = P.Group(P.delimitedList(P.Optional(macro_argument)))("args")
+macro_call_args = P.Group(P.delimitedList(P.Group(macro_argument)("arg")))("args")
 
 macro_call = P.Group(
     identifier("name") + sandwich("()", macro_call_args)
@@ -147,14 +146,18 @@ statement = P.Group(
     | macro_call
 )
 
-line << (
+line << P.Group(
     P.Optional(label("label"))
     + P.Optional(statement("statement"), default=None)
     + P.Optional(comment("comment"))
     + P.lineEnd.suppress()
 )("line")
 
-full_grammar = (P.stringStart + P.OneOrMore(P.Group(line)) + P.stringEnd)("program")
+full_grammar = (
+    P.stringStart
+    + P.ZeroOrMore(line)
+    + (P.stringEnd | P.Literal("#stop").suppress())
+)("program")
 
 
 if DEBUG:
