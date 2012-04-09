@@ -2,6 +2,7 @@ from emuplugin import BasePlugin
 import importlib
 import sys
 import time
+import os
 
 START_ADDRESS = 0x8000
 MIN_DISPLAY_HZ = 60
@@ -60,7 +61,7 @@ class TerminalPlugin(BasePlugin):
             return
         BasePlugin.__init__(self)
         self.time = None
-        sys.path.append("./terminals/")
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "terminals")))
         try:
             terminal = importlib.import_module(args.term + "_terminal")
         except ImportError:
