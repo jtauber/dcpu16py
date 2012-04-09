@@ -9,13 +9,13 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 class Terminal(QtGui.QWidget):
     VSIZE = 25
     HSIZE = 60
-    BUFFER_SIZE = VSIZE * HSIZE
     
     COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
     
     def __init__(self, args):
-        self.width = self.VSIZE
-        self.height = self.HSIZE
+        self.width = self.HSIZE
+        self.height = self.VSIZE
+        self.keys = []
         self.app = QtGui.QApplication(sys.argv)
         super(Terminal, self).__init__()
         
@@ -58,6 +58,13 @@ class Terminal(QtGui.QWidget):
     
     def closeEvent(self, e):
         self.closed = True
+    
+    def keyPressEvent(self, e):
+        for c in str(e.text()):
+            self.keys.insert(0, ord(c))
+    
+    def updatekeys(self):
+        pass
     
     def redraw(self):
         if self.closed:

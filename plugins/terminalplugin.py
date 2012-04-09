@@ -4,6 +4,7 @@ import sys
 import time
 
 START_ADDRESS = 0x8000
+MIN_DISPLAY_HZ = 60
 
 class TerminalPlugin(BasePlugin):
     """
@@ -12,13 +13,26 @@ class TerminalPlugin(BasePlugin):
     
     arguments = [(["--term"], dict(action="store", default="null", help="Terminal to use (e.g. null, pygame)"))]
     
+    def processkeys(self, cpu):
+        keyptr = 0x9000
+        for i in range(0, 16):
+            if not cpu.memory[keyptr + i]:
+                try:
+                    key = self.term.keys.pop()
+                except IndexError:
+                    break
+                cpu.memory[keyptr + i] = key
+    
     def tick(self, cpu):
         """
             Update the display every .1s or always if debug is on
         """
-        if self.debug or not self.time or (time.time() - self.time >= .1):
+        if self.debug or not self.time or (time.time() - self.time >= 1.0/float(MIN_DISPLAY_HZ)):
             self.time = time.time()
             self.term.redraw()
+        self.term.updatekeys()
+        if self.term.keys:
+            self.processkeys(cpu)
     
     def memory_changed(self, cpu, address, value):
         """
