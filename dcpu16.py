@@ -206,6 +206,8 @@ class DCPU16:
                 print("(%08X) %s" % (self.cycle, disassembler.next_instruction()))
             
             if opcode == 0x00:
+                if a == 0x00:
+                    break
                 arg1 = None
                 opcode = (a << 4) + 0x0
             else:
