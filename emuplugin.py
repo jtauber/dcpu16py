@@ -2,7 +2,7 @@ import threading
 import glob, imp
 from os.path import join, basename, splitext, dirname
 
-PLUGINS_DIR = "%s/plugins/" % dirname(__file__)
+PLUGINS_DIR = join(dirname(__file__), "plugins")
 
 def importPlugins(dir = PLUGINS_DIR):
     # http://tinyurl.com/cfceawr
