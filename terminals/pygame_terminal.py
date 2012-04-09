@@ -1,15 +1,12 @@
 import pygame
 
-WIDTH = 80
-HEIGHT = 24
-
 class Terminal:
     
     COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
     
     def __init__(self, args):
-        self.width = WIDTH
-        self.height = HEIGHT
+        self.width = args.width
+        self.height = args.height
         self.keys = []
         pygame.font.init()
         self.font = pygame.font.match_font("Monospace,dejavusansmono")
@@ -17,8 +14,8 @@ class Terminal:
         self.font = pygame.font.Font(self.font, 12)
         self.cell_width = max([self.font.metrics(chr(c))[0][1] for c in range(0, 128)])
         self.cell_height = self.font.get_height()
-        win_width = self.cell_width * WIDTH
-        win_height = self.cell_height * HEIGHT
+        win_width = self.cell_width * args.width
+        win_height = self.cell_height * args.height
         self.screen = pygame.display.set_mode((win_width, win_height))
     
     def update_character(self, row, column, character, color=None):
