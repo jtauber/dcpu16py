@@ -30,10 +30,10 @@ contributed by Peter Waller. You'll need to `pip install pyparsing` to run it.
 * `--speed` outputs the speed the emulator is running at in kHz
 * `--term TERM` specifies a terminal to use for text output (`null`, `debug`, `curses`, `pygame` or `qt`)
 
-I plan to work on an implementation of Forth on the DCPU-16 soon as well as a basic operating
-system.
+I'm working on an operating system for the DCPU-16 at
+[https://github.com/jtauber/dcpu16os](https://github.com/jtauber/dcpu16os) and also plan an
+implementation of Forth at some point.
 
 ## Examples
 
 Now see [https://github.com/jtauber/DCPU-16-Examples](https://github.com/jtauber/DCPU-16-Examples)
-(although my assembler and emulator don't necessarily support everything there yet)
