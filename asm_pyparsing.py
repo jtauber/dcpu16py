@@ -455,13 +455,17 @@ def main():
         return 1
     
     if not args.destination:
-        print(program)
+        if os.isatty(sys.stdout.fileno()):
+            log.fatal("stdout is a tty, not writing binary. "
+                      "Specify destination file or pipe output somewhere")
+        else:
+            sys.stdout.write(program)
     else:
         with open(args.destination, "wb") as fd:
             fd.write(program)
-        log.info("Program written to {0} ({1} bytes, hash={2})"
-                 .format(args.destination, len(program),
-                         hex(abs(hash(program)))))
+    log.info("Program written to {0} ({1} bytes, hash={2})"
+             .format(args.destination, len(program),
+                     hex(abs(hash(program)))))
             
     return 0
 
