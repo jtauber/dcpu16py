@@ -95,10 +95,9 @@ class DCPU16:
     
     @opcode(0x07)
     def SHL(self, a, b):
-        r = self.memory[a] << b
-        o = ((self.memory[a] << b) >> 16) % 0x10000
+        o, r = divmod(self.memory[a] << b, 0x10000)
         self.memory[a] = r
-        self.memory[O] = o
+        self.memory[O] = o % 0x10000
         self.cycle += 2
     
     @opcode(0x08)
