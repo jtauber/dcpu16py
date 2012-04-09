@@ -36,6 +36,8 @@ def operand_re(prefix):
         |
         (0x(?P<""" + prefix + """hex_literal>[0-9A-Fa-f]{1,4})) # hex literal
         |
+        (\[\s*(?P<""" + prefix + """label_indirect>\w+)\s*\]) # label indirect
+        |
         (?P<""" + prefix + """decimal_literal>\d+) # decimal literal
         |
         (?P<""" + prefix + """label>\w+) # label+
@@ -64,7 +66,7 @@ line_regex = re.compile(r"""^\s*
     $""", re.X)
 
 
-IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5, "I": 0x6, "J": 0x7, "POP": 0x18, "PC": 0x1C, "O": 0x1D}
+IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5, "I": 0x6, "J": 0x7, "POP": 0x18, "PUSH": 0x1a, "SP":0x1b, "PC": 0x1C, "O": 0x1D}
 OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA, "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}
 
 
@@ -103,6 +105,9 @@ def handle(token_dict, prefix):
         else:
             a = 0x1F
             x = l
+    elif token_dict[prefix + "label_indirect"] is not None:
+        a = 0x1E
+        x = token_dict[prefix + "label"]
     elif token_dict[prefix + "label"] is not None:
         a = 0x1F
         x = token_dict[prefix + "label"]
