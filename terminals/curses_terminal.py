@@ -19,6 +19,8 @@ class Terminal:
             raise SystemExit
         self.win = curses.initscr()
         self.win.nodelay(1)
+        self.win_height, self.win_width = self.win.getmaxyx()
+
         curses.curs_set(0)
         curses.noecho()
         self.width = args.width
@@ -47,10 +49,33 @@ class Terminal:
             pass
 
     def show(self):
-        pass
+        color = curses.color_pair(self.get_color(3, -1))
+
+        if self.win_width > self.width:
+            try:
+                s = '.'*(self.win_width - self.width)
+                for y in range(self.height):
+                    self.win.addstr(y, self.width, s, color)
+            except curses.error:
+                pass
+
+        if self.win_height > self.height:
+            try:
+                s = '.'*(self.win_width)
+                for y in range(self.height, self.win_height):
+                    self.win.addstr(y, 0, s, color)
+            except curses.error:
+                pass
 
     def updatekeys(self):
         try:
+            # XXX: this is probably a bad place to check if the window has
+            # resized but there is no other opportunity to do this
+            win_height, win_width = self.win.getmaxyx()
+            if win_height != self.win_height or win_width != self.win_width:
+                self.win_height, self.win_width = win_height, win_width
+                self.show()
+
             while(True):
                 char = self.win.getkey()
                 if len(char) == 1:
