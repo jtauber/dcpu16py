@@ -23,6 +23,22 @@ import sys
 
 import pyparsing as P
 
+# Replace the debug actions so that the results go to the debug log rather
+# than stdout, so that the output can be usefully piped.
+def _defaultStartDebugAction(instring, loc, expr):
+    log.debug("Match " + P._ustr(expr) + " at loc " + P._ustr(loc) + "(%d,%d)" 
+              % ( P.lineno(loc,instring), P.col(loc,instring) ))
+
+def _defaultSuccessDebugAction(instring, startloc, endloc, expr, toks):
+    log.debug("Matched " + P._ustr(expr) + " -> " + str(toks.asList()))
+
+def _defaultExceptionDebugAction(instring, loc, expr, exc):
+    log.debug("Exception raised:" + P._ustr(exc))
+
+P._defaultStartDebugAction = _defaultStartDebugAction
+P._defaultSuccessDebugAction = _defaultSuccessDebugAction
+P._defaultExceptionDebugAction = _defaultExceptionDebugAction
+
 
 # Run with "DEBUG=1 python ./asm_pyparsing.py"
 DEBUG = "DEBUG" in os.environ
