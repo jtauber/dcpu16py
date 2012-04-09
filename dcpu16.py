@@ -164,11 +164,13 @@ class DCPU16:
             self.cycle += 0 if self.skip else 1
         elif a == 0x18:
             arg1 = self.memory[SP]
-            self.memory[SP] = (self.memory[SP] + 1) % 0x10000
+            if not self.skip:
+                self.memory[SP] = (self.memory[SP] + 1) % 0x10000
         elif a == 0x19:
             arg1 = self.memory[SP]
         elif a == 0x1A:
-            self.memory[SP] = (self.memory[SP] - 1) % 0x10000
+            if not self.skip:
+                self.memory[SP] = (self.memory[SP] - 1) % 0x10000
             arg1 = self.memory[SP]
         elif a == 0x1E:
             arg1 = self.memory[self.memory[PC]]
