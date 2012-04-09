@@ -67,8 +67,8 @@ class TerminalPlugin(BasePlugin):
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "terminals")))
         try:
             terminal = importlib.import_module(args.term + "_terminal")
-        except ImportError:
-            print("Terminal %s not found" % args.term)
+        except ImportError as e:
+            print("Terminal %s not available: %s" % (args.term, e))
             raise SystemExit
         self.debug = args.debug
 
