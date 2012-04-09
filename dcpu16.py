@@ -17,7 +17,7 @@ except NameError:
 
 
 # offsets into DCPU16.memory corresponding to addressing mode codes
-SP, PC, O = 0x1001B, 0x1001C, 0x1001D
+SP, PC, O, LIT = 0x1001B, 0x1001C, 0x1001D, 0x1001E
 
 
 def opcode(code):
@@ -36,7 +36,7 @@ class DCPU16:
         
         self.plugins = plugins
         
-        self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001E)]
+        self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001F)]
         
         self.skip = False
         self.cycle = 0
@@ -182,6 +182,9 @@ class DCPU16:
         else:
             literal = True
             arg1 = a % 0x20
+            if not dereference:
+                self.memory[LIT] = arg1
+                arg1 = LIT
         
         if dereference and not literal:
             arg1 = self.memory[arg1]
