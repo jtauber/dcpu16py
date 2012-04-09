@@ -228,7 +228,11 @@ def process_operand(o, lvalue=False):
             if ib.register:
                 check_indirect_register(ib.register)
                 return 0x8 + IDENTIFIERS[ib.register], None
+            
+            elif ib.stack_op:
+                raise invalid_op("don't use PUSH/POP/PEEK with indirection")
                 
+            
             elif ib.literal is not None:
                 return 0x1E, ib.literal
             
