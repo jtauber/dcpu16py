@@ -7,14 +7,11 @@ import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 class Terminal(QtGui.QWidget):
-    VSIZE = 25
-    HSIZE = 60
-    
     COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
     
     def __init__(self, args):
-        self.width = self.HSIZE
-        self.height = self.VSIZE
+        self.width = args.width
+        self.height = args.height
         self.keys = []
         self.app = QtGui.QApplication(sys.argv)
         super(Terminal, self).__init__()
@@ -24,8 +21,8 @@ class Terminal(QtGui.QWidget):
         font_metrics = QtGui.QFontMetrics(self.font)
         self.cell_width = font_metrics.maxWidth() + 2
         self.cell_height = font_metrics.height()
-        win_width = self.cell_width * self.HSIZE
-        win_height = self.cell_height * self.VSIZE
+        win_width = self.cell_width * args.width
+        win_height = self.cell_height * args.height
 
         self.pixmap_buffer = QtGui.QPixmap(win_width, win_height)
         self.pixmap_buffer.fill(Qt.black)

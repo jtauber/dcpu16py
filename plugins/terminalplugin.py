@@ -3,6 +3,7 @@ import importlib
 import sys
 import time
 import os
+import re
 
 START_ADDRESS = 0x8000
 MIN_DISPLAY_HZ = 60
@@ -12,7 +13,9 @@ class TerminalPlugin(BasePlugin):
         A plugin to implement terminal selection
     """
     
-    arguments = [(["--term"], dict(action="store", default="null", help="Terminal to use (e.g. null, pygame)"))]
+    arguments = [
+            (["--term"], dict(action="store", default="null", help="Terminal to use (e.g. null, pygame)")),
+            (["--geometry"], dict(action="store", default="80x24", help="Geometry given as `width`x`height`", metavar="SIZE"))]
     
     def processkeys(self, cpu):
         keyptr = 0x9000
@@ -64,10 +67,19 @@ class TerminalPlugin(BasePlugin):
         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "terminals")))
         try:
             terminal = importlib.import_module(args.term + "_terminal")
-        except ImportError:
-            print("Terminal %s not found" % args.term)
+        except ImportError as e:
+            print("Terminal %s not available: %s" % (args.term, e))
             raise SystemExit
         self.debug = args.debug
+
+        m = re.match(r"(\d+)x(\d+)", args.geometry)
+        if m is None:
+            print("Invalid geometry `%s`" % args.geometry)
+            args.width, args.height = 80, 24
+        else:
+            args.width = int(m.group(1))
+            args.height = int(m.group(2))
+
         self.term = terminal.Terminal(args)
         self.name += "-%s" % args.term
         self.term.show()
