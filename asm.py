@@ -6,6 +6,7 @@ import struct
 import re
 import sys
 import argparse
+import os
 
 
 def disjunction(*lst):
@@ -148,8 +149,11 @@ if __name__ == '__main__':
         if y is not None:
             program.append(y)
     
-    with open(args.o, "wb") as f:
-        for word in program:
-            if isinstance(word, str):
-                word = labels[word]
-            f.write(struct.pack(">H", word))
+    try:
+        with open(args.o, "wb") as f:
+            for word in program:
+                if isinstance(word, str):
+                    word = labels[word]
+                f.write(struct.pack(">H", word))
+    except KeyError:
+        os.remove(args.o)
