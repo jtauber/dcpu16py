@@ -226,10 +226,15 @@ class DCPU16:
                     print("skipping")
                 self.skip = False
             else:
-                op(arg1, arg2)
                 if 0x01 <= opcode <=0xB: # write to memory
-                    for p in self.plugins:
-                        p.memory_changed(self, arg1, self.memory[arg1])
+                    oldval = self.memory[arg1]
+                    op(arg1, arg2)
+                    val = self.memory[arg1]
+                    if oldval != val:
+                        for p in self.plugins:
+                            p.memory_changed(self, arg1, val, oldval)
+                else:
+                    op(arg1, arg2)
                 if trace:
                     self.dump_registers()
                     self.dump_stack()
