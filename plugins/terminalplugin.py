@@ -38,13 +38,14 @@ class TerminalPlugin(BasePlugin):
         if self.term.keys:
             self.processkeys(cpu)
     
-    def memory_changed(self, cpu, address, value):
+    def memory_changed(self, cpu, address, value, oldval):
         """
             Inform the terminal that the memory is updated
         """
         if START_ADDRESS <= address <= START_ADDRESS + self.term.width * self.term.height:
             row, column = divmod(address - START_ADDRESS, self.term.width)
             ch = value % 0x0080
+            ch = ord(' ') if not ch else ch
             fg = (value & 0x4000) >> 14 | (value & 0x2000) >> 12 | (value & 0x1000) >> 10
             bg = (value & 0x400) >> 10 | (value & 0x200) >> 8 | (value & 0x100) >> 6
             self.term.update_character(row, column, ch, (fg, bg))

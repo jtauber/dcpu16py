@@ -43,7 +43,7 @@ class BasePlugin:
         """
         pass
     
-    def memory_changed(self, cpu, address, value):
+    def memory_changed(self, cpu, address, value, oldvalue):
         """
             Gets called on a write to memory
         """
