@@ -70,10 +70,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     program = []
-        if args.input == "-":
-            f = sys.stdin
-        else:
-            f = open(args.input, "rb")
+    if args.input == "-":
+        f = sys.stdin
+    else:
+        f = open(args.input, "rb")
     word = f.read(2)
     while word:
         program.append(struct.unpack(">H", word)[0])
