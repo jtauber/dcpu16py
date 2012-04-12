@@ -69,20 +69,20 @@ line_regex = re.compile(r"""^\s*
 
 
 IDENTIFIERS = {
-    "A": 0x0,
-    "B": 0x1,
-    "C": 0x2,
-    "X": 0x3,
-    "Y": 0x4,
-    "Z": 0x5,
-    "I": 0x6,
-    "J": 0x7,
-    "POP": 0x18,
+    "A":    0x0,
+    "B":    0x1,
+    "C":    0x2,
+    "X":    0x3,
+    "Y":    0x4,
+    "Z":    0x5,
+    "I":    0x6,
+    "J":    0x7,
+    "POP":  0x18,
     "PEEK": 0x19,
     "PUSH": 0x1a,
-    "SP":0x1b,
-    "PC": 0x1C,
-    "O": 0x1D
+    "SP":   0x1b,
+    "PC":   0x1C,
+    "O":    0x1D
 }
 
 OPCODES = {
