@@ -68,8 +68,40 @@ line_regex = re.compile(r"""^\s*
     $""", re.X)
 
 
-IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5, "I": 0x6, "J": 0x7, "POP": 0x18, "PEEK": 0x19, "PUSH": 0x1a, "SP":0x1b, "PC": 0x1C, "O": 0x1D}
-OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5, "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA, "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}
+IDENTIFIERS = {
+    "A": 0x0,
+    "B": 0x1,
+    "C": 0x2,
+    "X": 0x3,
+    "Y": 0x4,
+    "Z": 0x5,
+    "I": 0x6,
+    "J": 0x7,
+    "POP": 0x18,
+    "PEEK": 0x19,
+    "PUSH": 0x1a,
+    "SP":0x1b,
+    "PC": 0x1C,
+    "O": 0x1D
+}
+
+OPCODES = {
+    "SET": 0x1,
+    "ADD": 0x2,
+    "SUB": 0x3,
+    "MUL": 0x4,
+    "DIV": 0x5,
+    "MOD": 0x6,
+    "SHL": 0x7,
+    "SHR": 0x8,
+    "AND": 0x9,
+    "BOR": 0xA,
+    "XOR": 0xB,
+    "IFE": 0xC,
+    "IFN": 0xD,
+    "IFG": 0xE,
+    "IFB": 0xF
+}
 
 
 def clamped_value(l):
@@ -107,24 +139,24 @@ if __name__ == '__main__':
     parser.add_argument("-o", default="a.obj", help="Place the output into FILE", metavar="FILE")
     parser.add_argument("input", help="File with DCPU assembly code")
     args = parser.parse_args()
-    
+
     program = []
     labels = {}
-    
+
     for lineno, line in enumerate(open(args.input), start=1):
         mo = line_regex.match(line)
         if mo is None:
             report_error(args.input, lineno, "Syntax error")
             break
-        
+
         token_dict = mo.groupdict()
         if token_dict is None:
             report_error(args.input, lineno, "Syntax error")
             break
-        
+
         if token_dict["label"] is not None:
             labels[token_dict["label"]] = len(program)
-        
+
         o = x = y = None
         if token_dict["basic"] is not None:
             o = OPCODES[token_dict["basic"].upper()]
@@ -141,14 +173,14 @@ if __name__ == '__main__':
                     program.append(int(datum[2:], 16))
                 else:
                     program.append(int(datum))
-        
+
         if o is not None:
             program.append(((b << 10) + (a << 4) + o))
         if x is not None:
             program.append(x)
         if y is not None:
             program.append(y)
-    
+
     try:
         with open(args.o, "wb") as f:
             for word in program:
