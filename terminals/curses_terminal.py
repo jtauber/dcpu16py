@@ -3,6 +3,7 @@ import curses
 
 class Terminal:
     style_bold = False
+    keymap = {'A': 0x3, 'C': 0x2, 'D': 0x1}
 
     def setup_colors(self):
         curses.start_color()
@@ -79,7 +80,8 @@ class Terminal:
             while(True):
                 char = self.win.getkey()
                 if len(char) == 1:
-                    self.keys.insert(0, ord(char))
+                    c = self.keymap[char] if char in self.keymap else ord(char)
+                    self.keys.insert(0, c)
         except curses.error:
             pass
 
