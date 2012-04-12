@@ -109,17 +109,17 @@ def clamped_value(l):
 
 
 ADDR_MAP = {
-    "register":              lambda t,v: (IDENTIFIERS[t.upper()], None),
-    "register_indirect":     lambda t,v: (0x08 + IDENTIFIERS[t.upper()], None),
-    "hex_indexed_index":     lambda t,v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
-    "decimal_indexed_index": lambda t,v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
-    "label_indexed_index":   lambda t,v: (0x10 + IDENTIFIERS[t.upper()], v),
-    "hex_indirect":          lambda t,v: (0x1E, int(t, 16)),
-    "decimal_indirect":      lambda t,v: (0x1E, int(t)),
-    "hex_literal":           lambda t,v: clamped_value(int(t, 16)),
-    "decimal_literal":       lambda t,v: clamped_value(int(t)),
-    "label_indirect":        lambda t,v: (0x1E, t),
-    "label":                 lambda t,v: (0x1F, t),
+    "register":              lambda t, v: (IDENTIFIERS[t.upper()], None),
+    "register_indirect":     lambda t, v: (0x08 + IDENTIFIERS[t.upper()], None),
+    "hex_indexed_index":     lambda t, v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
+    "decimal_indexed_index": lambda t, v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
+    "label_indexed_index":   lambda t, v: (0x10 + IDENTIFIERS[t.upper()], v),
+    "hex_indirect":          lambda t, v: (0x1E, int(t, 16)),
+    "decimal_indirect":      lambda t, v: (0x1E, int(t)),
+    "hex_literal":           lambda t, v: clamped_value(int(t, 16)),
+    "decimal_literal":       lambda t, v: clamped_value(int(t)),
+    "label_indirect":        lambda t, v: (0x1E, t),
+    "label":                 lambda t, v: (0x1F, t),
 }
 
 
