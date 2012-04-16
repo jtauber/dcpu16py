@@ -7,6 +7,7 @@ import re
 import sys
 import argparse
 import os
+import codecs
 
 
 def disjunction(*lst):
@@ -112,6 +113,9 @@ if __name__ == '__main__':
     labels = {}
     
     for lineno, line in enumerate(open(args.input), start=1):
+        if lineno == 1:
+            line = line.lstrip(codecs.BOM_UTF8)
+
         mo = line_regex.match(line)
         if mo is None:
             report_error(args.input, lineno, "Syntax error")
