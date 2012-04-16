@@ -118,12 +118,12 @@ if __name__ == '__main__':
 
         mo = line_regex.match(line)
         if mo is None:
-            report_error(args.input, lineno, "Syntax error")
+            report_error(args.input, lineno, "Syntax error: '%s'" % line.strip())
             break
         
         token_dict = mo.groupdict()
         if token_dict is None:
-            report_error(args.input, lineno, "Syntax error")
+            report_error(args.input, lineno, "Syntax error: '%s'" % line.strip())
             break
         
         if token_dict["label"] is not None:
