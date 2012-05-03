@@ -2,8 +2,6 @@
 
 import os
 import argparse
-import importlib
-import inspect
 import sys
 import time
 import emuplugin
@@ -27,16 +25,6 @@ def unpack(s):
     return (ord(s[0]) << 8) + ord(s[1])
 
 
-def opcode(code):
-    """A decorator for opcodes"""
-    def decorator(func):
-        setattr(func, "_is_opcode", True)
-        setattr(func, "_opcode", code)
-        return func
-    
-    return decorator
-
-
 class DCPU16:
     
     def __init__(self, memory, plugins=[]):
@@ -48,38 +36,32 @@ class DCPU16:
         self.skip = False
         self.cycle = 0
         
-        self.opcodes = {}
-        for name, value in inspect.getmembers(self):
-            if inspect.ismethod(value) and getattr(value, "_is_opcode", False):
-                self.opcodes[getattr(value, "_opcode")] = value 
+        self.opcodes = {0x01: self.SET, 0x02: self.ADD, 0x03: self.SUB, 0x04: self.MUL, 0x05: self.DIV, 0x06: self.MOD,
+                        0x07: self.SHL, 0x08: self.SHR, 0x09: self.AND, 0x0a: self.BOR, 0x0b: self.XOR,
+                        0x0c: self.IFE, 0x0d: self.IFN, 0x0e: self.IFG, 0x0f: self.IFB, 0x010: self.JSR}
     
-    @opcode(0x01)
     def SET(self, a, b):
         self.memory[a] = b
         self.cycle += 1
     
-    @opcode(0x02)
     def ADD(self, a, b):
         o, r = divmod(self.memory[a] + b, 0x10000)
         self.memory[O] = o
         self.memory[a] = r
         self.cycle += 2
     
-    @opcode(0x03)
     def SUB(self, a, b):
         o, r = divmod(self.memory[a] - b, 0x10000)
         self.memory[O] = 0xFFFF if o == -1 else 0x0000
         self.memory[a] = r
         self.cycle += 2
     
-    @opcode(0x04)
     def MUL(self, a, b):
         o, r = divmod(self.memory[a] * b, 0x10000)
         self.memory[a] = r
         self.memory[O] = o % 0x10000
         self.cycle += 2
     
-    @opcode(0x05)
     def DIV(self, a, b):
         if b == 0x0:
             r = 0x0
@@ -91,7 +73,6 @@ class DCPU16:
         self.memory[O] = o
         self.cycle += 3
     
-    @opcode(0x06)
     def MOD(self, a, b):
         if b == 0x0:
             r = 0x0
@@ -100,14 +81,12 @@ class DCPU16:
         self.memory[a] = r
         self.cycle += 3
     
-    @opcode(0x07)
     def SHL(self, a, b):
         o, r = divmod(self.memory[a] << b, 0x10000)
         self.memory[a] = r
         self.memory[O] = o % 0x10000
         self.cycle += 2
     
-    @opcode(0x08)
     def SHR(self, a, b):
         r = self.memory[a] >> b
         o = ((self.memory[a] << 16) >> b) % 0x10000
@@ -115,42 +94,34 @@ class DCPU16:
         self.memory[O] = o
         self.cycle += 2
     
-    @opcode(0x09)
     def AND(self, a, b):
         self.memory[a] = self.memory[a] & b
         self.cycle += 1
     
-    @opcode(0x0a)
     def BOR(self, a, b):
         self.memory[a] = self.memory[a] | b
         self.cycle += 1
     
-    @opcode(0x0b)
     def XOR(self, a, b):
         self.memory[a] = self.memory[a] ^ b
         self.cycle += 1
     
-    @opcode(0x0c)
     def IFE(self, a, b):
         self.skip = not (self.memory[a] == b)
         self.cycle += 2 + 1 if self.skip else 0
     
-    @opcode(0x0d)
     def IFN(self, a, b):
         self.skip = not (self.memory[a] != b)
         self.cycle += 2 + 1 if self.skip else 0
     
-    @opcode(0x0e)
     def IFG(self, a, b):
         self.skip = not (self.memory[a] > b)
         self.cycle += 2 + 1 if self.skip else 0
     
-    @opcode(0x0f)
     def IFB(self, a, b):
         self.skip = not ((self.memory[a] & b) != 0)
         self.cycle += 2 + 1 if self.skip else 0
     
-    @opcode(0x010)
     def JSR(self, a, b):
         self.memory[SP] = (self.memory[SP] - 1) % 0x10000
         pc = self.memory[PC]
