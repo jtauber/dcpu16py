@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
+import os
 import argparse
 import importlib
 import inspect
-import struct
 import sys
 import time
 import emuplugin
@@ -18,6 +18,13 @@ except NameError:
 
 # offsets into DCPU16.memory corresponding to addressing mode codes
 SP, PC, O, LIT = 0x1001B, 0x1001C, 0x1001D, 0x1001E
+
+
+def unpack(s):
+    """Equivalent of struct.unpack(">H", s)[0]"""
+
+    assert len(s) == 2
+    return (ord(s[0]) << 8) + ord(s[1])
 
 
 def opcode(code):
@@ -264,27 +271,12 @@ class DCPU16:
             print("Stack: [" + " ".join("%04X" % self.memory[m] for m in range(self.memory[SP], 0x10000)) + "]")
 
 
-def main(argv):
-    plugins = emuplugin.importPlugins()
-    parser = argparse.ArgumentParser(description="DCPU-16 emulator", prog=argv[0])
-    parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode. This implies '--trace'")
-    parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
-    parser.add_argument("-s", "--speed", action="store_const", const=True, default=False, help="Print speed the emulator is running at in kHz")
-    parser.add_argument("object_file", help="File with assembled DCPU binary")
-    
-    for p in plugins:
-        for args in p.arguments:
-            parser.add_argument(*args[0], **args[1])
-    
-    args = parser.parse_args(argv[1:])
-    if args.debug:
-        args.trace = True
-    
+def run(args, plugins):
     program = []
     with open(args.object_file, "rb") as f:
         word = f.read(2)
         while word:
-            program.append(struct.unpack(">H", word)[0])
+            program.append(unpack(word))
             word = f.read(2)
     
     plugins_loaded = []
@@ -305,9 +297,41 @@ def main(argv):
             p.shutdown()
 
 
+def main(argv):
+    plugins = emuplugin.importPlugins()
+    parser = argparse.ArgumentParser(description="DCPU-16 emulator", prog=argv[0])
+    parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode. This implies '--trace'")
+    parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
+    parser.add_argument("-s", "--speed", action="store_const", const=True, default=False, help="Print speed the emulator is running at in kHz")
+    parser.add_argument("object_file", help="File with assembled DCPU binary")
+
+    for p in plugins:
+        for args in p.arguments:
+            parser.add_argument(*args[0], **args[1])
+
+    args = parser.parse_args(argv[1:])
+    if args.debug:
+        args.trace = True
+
+    run(args, plugins)
+
+
+def pypy_main(argv):
+    program = []
+    fd = os.open(argv[1], os.O_RDONLY, 0777)
+    while True:
+        word = os.read(fd, 2)
+        if len(word) == 0:
+            break
+        program.append(unpack(word))
+    os.close(fd)
+
+    dcpu16 = DCPU16(program, [])
+    dcpu16.run()
+
 def target(*args):
     """Target for PyPy translator."""
-    return main, None
+    return pypy_main, None
 
 
 if __name__ == "__main__":
