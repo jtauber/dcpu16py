@@ -173,8 +173,10 @@ class DCPU16:
         tick = 0
         last_time = time.time()
         last_cycle = self.cycle
-        if trace:
-            disassembler = disasm.Disassembler(self.memory)
+
+        # FIXME
+        # if trace:
+        #     disassembler = disasm.Disassembler(self.memory)
         
         while True:
             pc = self.memory[PC]
@@ -184,9 +186,10 @@ class DCPU16:
             operands, opcode = divmod(w, 16)
             b, a = divmod(operands, 64)
             
-            if trace:
-                disassembler.offset = pc
-                print("(%08X) %s" % (self.cycle, disassembler.next_instruction()))
+            # FIXME
+            # if trace:
+            #     disassembler.offset = pc
+            #     print("(%08X) %s" % (self.cycle, disassembler.next_instruction()))
             
             if opcode == 0x00:
                 if a == 0x00:
