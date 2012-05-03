@@ -16,7 +16,7 @@ Runs a number of example programs successfully. Should be feature-complete at th
 A dissassembler and (two) assemblers are also included as well as the emulator. The emulator
 includes a debugger. 
 
-* `./asm.py example.asm example.obj` will assemble Notch's example to object code
+* `./asm.py example.dasm16 example.obj` will assemble Notch's example to object code
 * `./disasm.py example.obj` will disassemble the given object code
 * `./dcpu16.py example.obj` will execute it (but won't show anything without extra options)
 
