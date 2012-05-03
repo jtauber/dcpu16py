@@ -264,9 +264,9 @@ class DCPU16:
             print("Stack: [" + " ".join("%04X" % self.memory[m] for m in range(self.memory[SP], 0x10000)) + "]")
 
 
-if __name__ == "__main__":
+def main(argv):
     plugins = emuplugin.importPlugins()
-    parser = argparse.ArgumentParser(description="DCPU-16 emulator")
+    parser = argparse.ArgumentParser(description="DCPU-16 emulator", prog=argv[0])
     parser.add_argument("-d", "--debug", action="store_const", const=True, default=False, help="Run emulator in debug mode. This implies '--trace'")
     parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
     parser.add_argument("-s", "--speed", action="store_const", const=True, default=False, help="Print speed the emulator is running at in kHz")
@@ -276,7 +276,7 @@ if __name__ == "__main__":
         for args in p.arguments:
             parser.add_argument(*args[0], **args[1])
     
-    args = parser.parse_args()
+    args = parser.parse_args(argv[1:])
     if args.debug:
         args.trace = True
     
@@ -303,3 +303,12 @@ if __name__ == "__main__":
     finally:
         for p in plugins_loaded:
             p.shutdown()
+
+
+def target(*args):
+    """Target for PyPy translator."""
+    return main, None
+
+
+if __name__ == "__main__":
+    main(sys.argv)
