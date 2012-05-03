@@ -194,7 +194,7 @@ class DCPU16:
             if opcode == 0x00:
                 if a == 0x00:
                     break
-                arg1 = None
+                arg1 = 0  # only for JSR, ignored by it
                 opcode = (a << 4) + 0x0
             else:
                 arg1 = self.get_operand(a)
@@ -302,6 +302,7 @@ def pypy_main(argv):
 
     dcpu16 = DCPU16(program, [])
     dcpu16.run()
+    return 0
 
 def target(*args):
     """Target for PyPy translator."""
