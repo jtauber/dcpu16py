@@ -20,9 +20,13 @@ SP, PC, O, LIT = 0x1001B, 0x1001C, 0x1001D, 0x1001E
 
 def unpack(s):
     """Equivalent of struct.unpack(">H", s)[0]"""
-
     assert len(s) == 2
     return (ord(s[0]) << 8) + ord(s[1])
+
+
+def divmod(x, y):
+    """PyPy doesn't have builtin divmod :("""
+    return (x//y,x%y)
 
 
 class DCPU16:
@@ -36,9 +40,9 @@ class DCPU16:
         self.skip = False
         self.cycle = 0
         
-        self.opcodes = {0x01: self.SET, 0x02: self.ADD, 0x03: self.SUB, 0x04: self.MUL, 0x05: self.DIV, 0x06: self.MOD,
-                        0x07: self.SHL, 0x08: self.SHR, 0x09: self.AND, 0x0a: self.BOR, 0x0b: self.XOR,
-                        0x0c: self.IFE, 0x0d: self.IFN, 0x0e: self.IFG, 0x0f: self.IFB, 0x010: self.JSR}
+        self.opcodes = {0x01: DCPU16.SET, 0x02: DCPU16.ADD, 0x03: DCPU16.SUB, 0x04: DCPU16.MUL, 0x05: DCPU16.DIV, 0x06: DCPU16.MOD,
+                        0x07: DCPU16.SHL, 0x08: DCPU16.SHR, 0x09: DCPU16.AND, 0x0a: DCPU16.BOR, 0x0b: DCPU16.XOR,
+                        0x0c: DCPU16.IFE, 0x0d: DCPU16.IFN, 0x0e: DCPU16.IFG, 0x0f: DCPU16.IFB, 0x010: DCPU16.JSR}
     
     def SET(self, a, b):
         self.memory[a] = b
@@ -209,13 +213,13 @@ class DCPU16:
             else:
                 if 0x01 <= opcode <=0xB: # write to memory
                     oldval = self.memory[arg1]
-                    op(arg1, arg2)
+                    op(self, arg1, arg2)
                     val = self.memory[arg1]
                     if oldval != val:
                         for p in self.plugins:
                             p.memory_changed(self, arg1, val, oldval)
                 else:
-                    op(arg1, arg2)
+                    op(self, arg1, arg2)
                 if trace:
                     self.dump_registers()
                     self.dump_stack()
