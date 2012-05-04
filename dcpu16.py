@@ -18,6 +18,18 @@ except NameError:
 SP, PC, O, LIT = 0x1001B, 0x1001C, 0x1001D, 0x1001E
 
 
+class Namespace(object):
+    """Replacement for argparse.Namespace"""
+
+    def __init__(self, object_file):
+        self.object_file = object_file
+        self.debug = False
+        self.trace = False
+        self.speed = False
+        self.term = 'curses'
+        self.geometry = '80x24'
+
+
 def unpack(s):
     """Equivalent of struct.unpack(">H", s)[0]"""
     assert len(s) == 2
@@ -251,12 +263,15 @@ class DCPU16:
 
 def run(args, plugins):
     program = []
-    with open(args.object_file, "rb") as f:
-        word = f.read(2)
-        while word:
-            program.append(unpack(word))
-            word = f.read(2)
-    
+
+    fd = os.open(args.object_file, os.O_RDONLY, 0777)
+    while True:
+        word = os.read(fd, 2)
+        if len(word) == 0:
+            break
+        program.append(unpack(word))
+    os.close(fd)
+
     plugins_loaded = []
     try:
         for p in plugins:
@@ -264,9 +279,9 @@ def run(args, plugins):
             if p.loaded:
                 print("Started plugin: %s" % p.name)
                 plugins_loaded.append(p)
-        
+
         dcpu16 = DCPU16(program, plugins_loaded)
-        
+
         dcpu16.run(trace=args.trace, show_speed=args.speed)
     except KeyboardInterrupt:
         pass
@@ -292,21 +307,17 @@ def main(argv):
         args.trace = True
 
     run(args, plugins)
+    return 0
 
 
 def pypy_main(argv):
-    program = []
-    fd = os.open(argv[1], os.O_RDONLY, 0777)
-    while True:
-        word = os.read(fd, 2)
-        if len(word) == 0:
-            break
-        program.append(unpack(word))
-    os.close(fd)
+    args = Namespace(object_file=argv[-1])
 
-    dcpu16 = DCPU16(program, [])
-    dcpu16.run()
+    plugins = []
+
+    run(args, plugins)
     return 0
+
 
 def target(*args):
     """Target for PyPy translator."""
