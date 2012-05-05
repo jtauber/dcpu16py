@@ -8,10 +8,20 @@ import emuplugin
 import disasm
 
 
+# In Python 3 b'a'[0] returns int.
+# In Python 2 and RPython it's str.
+def asc2(s, i): return ord(s[i])
+def asc3(s, i): return s[i]
+
+
 try:
+    # Python 2 or RPython
     raw_input
+    asc = asc2
 except NameError:
+    # Python 3
     raw_input = input
+    asc = asc3
 
 
 # offsets into DCPU16.memory corresponding to addressing mode codes
@@ -30,10 +40,10 @@ class Namespace(object):
         self.geometry = '80x24'
 
 
+
 def unpack(s):
     """Equivalent of struct.unpack(">H", s)[0]"""
-    assert len(s) == 2
-    return (ord(s[0]) << 8) + ord(s[1])
+    return (asc(s, 0) << 8) + asc(s, 1)
 
 
 def divmod(x, y):
@@ -264,7 +274,7 @@ class DCPU16:
 def run(args, plugins):
     program = []
 
-    fd = os.open(args.object_file, os.O_RDONLY, 0777)
+    fd = os.open(args.object_file, os.O_RDONLY, 0o777)
     while True:
         word = os.read(fd, 2)
         if len(word) == 0:
