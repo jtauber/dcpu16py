@@ -14,12 +14,9 @@ def asc2(s, i): return ord(s[i])
 def asc3(s, i): return s[i]
 
 
-try:
-    # Python 2 or RPython
-    raw_input
+if sys.version_info < (3,):
     asc = asc2
-except NameError:
-    # Python 3
+else:
     raw_input = input
     asc = asc3
 
