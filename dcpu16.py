@@ -26,52 +26,52 @@ def opcode(code):
         setattr(func, "_is_opcode", True)
         setattr(func, "_opcode", code)
         return func
-    
+
     return decorator
 
 
 class DCPU16:
-    
+
     def __init__(self, memory, plugins=[]):
-        
+
         self.plugins = plugins
-        
+
         self.memory = [memory[i] if i < len(memory) else 0 for i in range(0x1001F)]
-        
+
         self.skip = False
         self.cycle = 0
-        
+
         self.opcodes = {}
         for name, value in inspect.getmembers(self):
             if inspect.ismethod(value) and getattr(value, "_is_opcode", False):
-                self.opcodes[getattr(value, "_opcode")] = value 
-    
+                self.opcodes[getattr(value, "_opcode")] = value
+
     @opcode(0x01)
     def SET(self, a, b):
         self.memory[a] = b
         self.cycle += 1
-    
+
     @opcode(0x02)
     def ADD(self, a, b):
         o, r = divmod(self.memory[a] + b, 0x10000)
         self.memory[O] = o
         self.memory[a] = r
         self.cycle += 2
-    
+
     @opcode(0x03)
     def SUB(self, a, b):
         o, r = divmod(self.memory[a] - b, 0x10000)
         self.memory[O] = 0xFFFF if o == -1 else 0x0000
         self.memory[a] = r
         self.cycle += 2
-    
+
     @opcode(0x04)
     def MUL(self, a, b):
         o, r = divmod(self.memory[a] * b, 0x10000)
         self.memory[a] = r
         self.memory[O] = o % 0x10000
         self.cycle += 2
-    
+
     @opcode(0x05)
     def DIV(self, a, b):
         if b == 0x0:
@@ -83,7 +83,7 @@ class DCPU16:
         self.memory[a] = r
         self.memory[O] = o
         self.cycle += 3
-    
+
     @opcode(0x06)
     def MOD(self, a, b):
         if b == 0x0:
@@ -92,14 +92,14 @@ class DCPU16:
             r = self.memory[a] % b
         self.memory[a] = r
         self.cycle += 3
-    
+
     @opcode(0x07)
     def SHL(self, a, b):
         o, r = divmod(self.memory[a] << b, 0x10000)
         self.memory[a] = r
         self.memory[O] = o % 0x10000
         self.cycle += 2
-    
+
     @opcode(0x08)
     def SHR(self, a, b):
         r = self.memory[a] >> b
@@ -107,42 +107,42 @@ class DCPU16:
         self.memory[a] = r
         self.memory[O] = o
         self.cycle += 2
-    
+
     @opcode(0x09)
     def AND(self, a, b):
         self.memory[a] = self.memory[a] & b
         self.cycle += 1
-    
+
     @opcode(0x0a)
     def BOR(self, a, b):
         self.memory[a] = self.memory[a] | b
         self.cycle += 1
-    
+
     @opcode(0x0b)
     def XOR(self, a, b):
         self.memory[a] = self.memory[a] ^ b
         self.cycle += 1
-    
+
     @opcode(0x0c)
     def IFE(self, a, b):
         self.skip = not (self.memory[a] == b)
         self.cycle += 2 + 1 if self.skip else 0
-    
+
     @opcode(0x0d)
     def IFN(self, a, b):
         self.skip = not (self.memory[a] != b)
         self.cycle += 2 + 1 if self.skip else 0
-    
+
     @opcode(0x0e)
     def IFG(self, a, b):
         self.skip = not (self.memory[a] > b)
         self.cycle += 2 + 1 if self.skip else 0
-    
+
     @opcode(0x0f)
     def IFB(self, a, b):
         self.skip = not ((self.memory[a] & b) != 0)
         self.cycle += 2 + 1 if self.skip else 0
-    
+
     @opcode(0x010)
     def JSR(self, a, b):
         self.memory[SP] = (self.memory[SP] - 1) % 0x10000
@@ -150,7 +150,7 @@ class DCPU16:
         self.memory[self.memory[SP]] = pc
         self.memory[PC] = b
         self.cycle += 2
-    
+
     def get_operand(self, a, dereference=False):
         literal = False
         if a < 0x08 or 0x1B <= a <= 0x1D:
@@ -186,30 +186,30 @@ class DCPU16:
             if not dereference:
                 self.memory[LIT] = arg1
                 arg1 = LIT
-        
+
         if dereference and not literal:
             arg1 = self.memory[arg1]
         return arg1
-    
+
     def run(self, trace=False, show_speed=False):
         tick = 0
         last_time = time.time()
         last_cycle = self.cycle
         if trace:
             disassembler = disasm.Disassembler(self.memory)
-        
+
         while True:
             pc = self.memory[PC]
             w = self.memory[pc]
             self.memory[PC] += 1
-            
+
             operands, opcode = divmod(w, 16)
             b, a = divmod(operands, 64)
-            
+
             if trace:
                 disassembler.offset = pc
                 print("(%08X) %s" % (self.cycle, disassembler.next_instruction()))
-            
+
             if opcode == 0x00:
                 if a == 0x00:
                     break
@@ -217,10 +217,10 @@ class DCPU16:
                 opcode = (a << 4) + 0x0
             else:
                 arg1 = self.get_operand(a)
-            
+
             op = self.opcodes[opcode]
             arg2 = self.get_operand(b, dereference=True)
-            
+
             if self.skip:
                 if trace:
                     print("skipping")
@@ -238,7 +238,7 @@ class DCPU16:
                 if trace:
                     self.dump_registers()
                     self.dump_stack()
-            
+
             tick += 1
             if tick >= 100000:
                 if show_speed:
@@ -251,12 +251,12 @@ class DCPU16:
                     p.tick(self)
             except SystemExit:
                 break
-    
+
     def dump_registers(self):
         print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
             self.memory[0x10000 + i]) for i in range(8)))
         print("PC={0:04X} SP={1:04X} O={2:04X}".format(*[self.memory[i] for i in (PC, SP, O)]))
-    
+
     def dump_stack(self):
         if self.memory[SP] == 0x0:
             print("Stack: []")
@@ -271,22 +271,22 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--trace", action="store_const", const=True, default=False, help="Print dump of registers and stack after every step")
     parser.add_argument("-s", "--speed", action="store_const", const=True, default=False, help="Print speed the emulator is running at in kHz")
     parser.add_argument("object_file", help="File with assembled DCPU binary")
-    
+
     for p in plugins:
         for args in p.arguments:
             parser.add_argument(*args[0], **args[1])
-    
+
     args = parser.parse_args()
     if args.debug:
         args.trace = True
-    
+
     program = []
     with open(args.object_file, "rb") as f:
         word = f.read(2)
         while word:
             program.append(struct.unpack(">H", word)[0])
             word = f.read(2)
-    
+
     plugins_loaded = []
     try:
         for p in plugins:
@@ -294,9 +294,9 @@ if __name__ == "__main__":
             if p.loaded:
                 print("Started plugin: %s" % p.name)
                 plugins_loaded.append(p)
-        
+
         dcpu16 = DCPU16(program, plugins_loaded)
-        
+
         dcpu16.run(trace=args.trace, show_speed=args.speed)
     except KeyboardInterrupt:
         pass

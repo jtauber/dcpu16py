@@ -11,7 +11,7 @@ class DebuggerPlugin(BasePlugin):
     """
         A plugin to implement a debugger
     """
-    
+
     def __init__(self, args):
         """
             Enable debugger if args.debug is True
@@ -20,7 +20,7 @@ class DebuggerPlugin(BasePlugin):
         self.loaded = args.debug
         self.debugger_breaks = set()
         self.debugger_in_continue = False
-    
+
     def tick(self, cpu):
         self.cpu = cpu
         if not self.debugger_in_continue or cpu.memory[dcpu16.PC] in self.debugger_breaks:
@@ -66,7 +66,7 @@ Close emulator with Ctrl-D
                         raise ValueError("Invalid command!")
                 except ValueError as ex:
                     print(ex)
-    
+
     @staticmethod
     def debugger_parse_location(what):
         registers = "abcxyzij"
@@ -84,7 +84,7 @@ Close emulator with Ctrl-D
             if not 0 <= addr <= 0xFFFF:
                 raise ValueError("Invalid address!")
             return addr
-    
+
     def debugger_break(self, *addrs):
         breaks = set()
         for addr in addrs:
@@ -93,7 +93,7 @@ Close emulator with Ctrl-D
                 raise ValueError("Invalid address!")
             breaks.add(addr)
         self.debugger_breaks.update(breaks)
-    
+
     def debugger_clear(self, *addrs):
         if not addrs:
             self.debugger_breaks = set()
@@ -105,14 +105,14 @@ Close emulator with Ctrl-D
                     raise ValueError("Invalid address!")
                 breaks.add(addr)
             self.debugger_breaks.difference_update(breaks)
-    
+
     def debugger_set(self, what, value):
         value = int(value, 16)
         if not 0 <= value <= 0xFFFF:
             raise ValueError("Invalid value!")
         addr = self.debugger_parse_location(what)
         self.cpu.memory[addr] = value
-    
+
     def debugger_get(self, what):
         addr = self.debugger_parse_location(what)
         value = self.cpu.memory[addr]

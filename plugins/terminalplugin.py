@@ -12,11 +12,11 @@ class TerminalPlugin(BasePlugin):
     """
         A plugin to implement terminal selection
     """
-    
+
     arguments = [
             (["--term"], dict(action="store", default="null", help="Terminal to use (e.g. null, pygame)")),
             (["--geometry"], dict(action="store", default="80x24", help="Geometry given as `width`x`height`", metavar="SIZE"))]
-    
+
     def processkeys(self, cpu):
         keyptr = 0x9000
         for i in range(0, 16):
@@ -26,7 +26,7 @@ class TerminalPlugin(BasePlugin):
                 except IndexError:
                     break
                 cpu.memory[keyptr + i] = key
-    
+
     def tick(self, cpu):
         """
             Update the display every .1s or always if debug is on
@@ -37,7 +37,7 @@ class TerminalPlugin(BasePlugin):
         self.term.updatekeys()
         if self.term.keys:
             self.processkeys(cpu)
-    
+
     def memory_changed(self, cpu, address, value, oldval):
         """
             Inform the terminal that the memory is updated
@@ -49,13 +49,13 @@ class TerminalPlugin(BasePlugin):
             fg = (value & 0x4000) >> 14 | (value & 0x2000) >> 12 | (value & 0x1000) >> 10
             bg = (value & 0x400) >> 10 | (value & 0x200) >> 8 | (value & 0x100) >> 6
             self.term.update_character(row, column, ch, (fg, bg))
-    
+
     def shutdown(self):
         """
             Shutdown the terminal
         """
         self.term.quit()
-    
+
     def __init__(self, args):
         """
             Create a terminal based on the term argument

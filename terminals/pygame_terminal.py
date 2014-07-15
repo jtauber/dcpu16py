@@ -1,9 +1,9 @@
 import pygame
 
 class Terminal:
-    
+
     COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
-    
+
     def __init__(self, args):
         self.width = args.width
         self.height = args.height
@@ -17,7 +17,7 @@ class Terminal:
         win_width = self.cell_width * args.width
         win_height = self.cell_height * args.height
         self.screen = pygame.display.set_mode((win_width, win_height))
-    
+
     def update_character(self, row, column, character, color=None):
         if not color or (not color[0] and not color[1]):
             fgcolor = self.COLORS[7]
@@ -30,19 +30,19 @@ class Terminal:
         char = self.font.render(chr(character), True, fgcolor)
         surf.blit(char, (1, 1))
         self.screen.blit(surf, (column*self.cell_width, row*self.cell_height))
-    
+
     def show(self):
         pass
-    
+
     def updatekeys(self):
         events = pygame.event.get(pygame.KEYDOWN)
         for e in events:
             key = e.unicode
             if key:
                 self.keys.insert(0, ord(e.unicode))
-    
+
     def redraw(self):
         pygame.display.flip()
-    
+
     def quit(self):
         pass

@@ -27,7 +27,7 @@ from collections import defaultdict
 # Replace the debug actions so that the results go to the debug log rather
 # than stdout, so that the output can be usefully piped.
 def _defaultStartDebugAction(instring, loc, expr):
-    log.debug("Match " + P._ustr(expr) + " at loc " + P._ustr(loc) + "(%d,%d)" 
+    log.debug("Match " + P._ustr(expr) + " at loc " + P._ustr(loc) + "(%d,%d)"
               % ( P.lineno(loc,instring), P.col(loc,instring) ))
 
 def _defaultSuccessDebugAction(instring, startloc, endloc, expr, toks):
@@ -187,7 +187,7 @@ IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5,
 OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5,
            "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA,
            "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}
-        
+
 def process_operand(o, lvalue=False):
     """
     Returns (a, x) where a is a value which identifies the nature of the value
@@ -195,7 +195,7 @@ def process_operand(o, lvalue=False):
     (e.g. a literal value >= 0x20)
     """
     # TODO(pwaller): Reject invalid lvalues
-    
+
     def invalid_op(reason):
         # TODO(pwaller): Need to indicate origin of error
         return RuntimeError("Invalid operand, {0}: {1}"
@@ -210,10 +210,10 @@ def process_operand(o, lvalue=False):
         b = o.basic
         if b.register:
             return IDENTIFIERS[b.register], None
-            
+
         elif b.stack_op:
             return IDENTIFIERS[b.stack_op], None
-            
+
         elif b.literal is not None:
             l = b.literal
             if not isinstance(l, basestring) and l < 0x20:
@@ -222,7 +222,7 @@ def process_operand(o, lvalue=False):
             if isinstance(l, int) and not 0 <= l <= WORD_MAX:
                 raise invalid_op("literal exceeds word size")
             return 0x1F, l
-            
+
     elif o.indirect:
         i = o.indirect
         if i.basic:
@@ -231,24 +231,24 @@ def process_operand(o, lvalue=False):
             if ib.register:
                 check_indirect_register(ib.register)
                 return 0x8 + IDENTIFIERS[ib.register], None
-            
+
             elif ib.stack_op:
                 raise invalid_op("don't use PUSH/POP/PEEK with indirection")
-                
-            
+
+
             elif ib.literal is not None:
                 return 0x1E, ib.literal
-            
+
         elif i.expr:
             # [register+literal]
             ie = i.expr
             check_indirect_register(ie.register)
             return 0x10 | IDENTIFIERS[ie.register], ie.literal
-    
+
     raise invalid_op("this is a bug")
 
 def codegen(source, input_filename="<unknown>"):
-    
+
     try:
         parsed = full_grammar.parseString(source)
     except P.ParseException as exc:
@@ -257,50 +257,50 @@ def codegen(source, input_filename="<unknown>"):
                   .format(input_filename, exc.lineno, exc.col,
                           exc.markInputline()))
         return None
-    
+
     log.debug("=====")
     log.debug("  Successful parse, XML syntax interpretation:")
     log.debug("=====")
     log.debug(parsed.asXML())
-    
+
     labels = {}
     macros = {}
     program = []
     # Number of times a given macro has been called so that we can generate
     # unique labels
     n_macro_calls = defaultdict(int)
-    
+
     def process_macro_definition(statement):
         log.debug("Macro definition: {0}".format(statement.asXML()))
         macros[statement.name] = statement
-        
+
     def process_macro_call(offset, statement, context=""):
         log.debug("--------------")
         log.debug("Macro call: {0}".format(statement.asXML()))
         log.debug("--------------")
-        
+
         macroname = statement.name
         macro = macros.get(macroname, None)
         n_macro_calls[macroname] += 1
         context = context + macroname + str(n_macro_calls[macroname])
-        
+
         if not macro:
             raise RuntimeError("Call to undefined macro: {0}".format(macroname))
-        
+
         assert len(macro.args) == len(statement.args), (
             "Wrong number of arguments to macro call {0!r}".format(macroname))
-        
-        # TODO(pwaller): Check for collisions between argument name and code 
+
+        # TODO(pwaller): Check for collisions between argument name and code
         #                label
         args = {}
-        
+
         log.debug("Populated args:")
         for name, arg in zip(macro.args, statement.args):
             args[name] = arg
-            log.debug("  - {0}: {1}".format(name, arg)) 
-         
+            log.debug("  - {0}: {1}".format(name, arg))
+
         lines = []
-        
+
         for l in macro.lines:
             new_line = l.copy()
             s = l.statement
@@ -308,7 +308,7 @@ def codegen(source, input_filename="<unknown>"):
                 new_statement = s.copy()
                 new_line["statement"] = new_statement
             #if l.label: new_line["label"] = context + l.label
-            
+
             # Replace literals whose names are macro arguments
             # also, substitute labels with (context, label).
             # Resolution of a label happens later by first searching for a label
@@ -322,7 +322,7 @@ def codegen(source, input_filename="<unknown>"):
                     new_op = new_statement.first.copy()
                     new_op["basic"] = new_basic
                     new_statement["first"] = new_op
-                    
+
             if s and s.second and s.second.basic and s.second.basic.literal:
                 if s.second.basic.literal in args:
                     new_statement["second"] = args[s.second.basic.literal]
@@ -332,7 +332,7 @@ def codegen(source, input_filename="<unknown>"):
                     new_op = new_statement.second.copy()
                     new_op["basic"] = new_basic
                     new_statement["second"] = new_op
-                    
+
             # Replace macro call arguments
             if s and s.macro_call:
                 new_macro_call = s.macro_call.copy()
@@ -343,13 +343,13 @@ def codegen(source, input_filename="<unknown>"):
                     if arg.basic.literal not in args:
                         continue
                     new_macro_call_args[i] = args[arg.basic.literal]
-                
-                        
+
+
             lines.append(new_line)
-        
+
         log.debug("Populated macro: {0}"
                   .format("\n".join(l.dump() for l in lines)))
-        
+
         # Do code generation
         code = []
         for l in lines:
@@ -358,7 +358,7 @@ def codegen(source, input_filename="<unknown>"):
             log.debug("  Code: {0}".format(a))
             code.extend(a)
         return code
-        
+
     def generate(offset, line, context=""):
         log.debug("Interpreting element {0}: {1}".format(i, line))
         if line.label:
@@ -369,43 +369,43 @@ def codegen(source, input_filename="<unknown>"):
                 log.fatal(msg)
                 raise RuntimeError(msg)
             labels[label] = offset
-            
+
         s = line.statement
         if not s: return []
-        
+
         if s.macro_definition:
             process_macro_definition(s.macro_definition)
             return []
         elif s.macro_call:
             return process_macro_call(offset, s.macro_call, context)
-            
+
         log.debug("Generating for {0}".format(s.asXML(formatted=False)))
         if s.opcode == "DAT":
             return s.data
-        
+
         if s.opcode == "JSR":
             o = 0x00
             a, x = 0x01, None
             b, y = process_operand(s.first)
-            
+
         else:
             o = OPCODES[s.opcode]
             a, x = process_operand(s.first, lvalue=True)
             b, y = process_operand(s.second)
-        
+
         code = []
         code.append(((b << 10) + (a << 4) + o))
         if x is not None: code.append(x)
         if y is not None: code.append(y)
         return code
-    
+
     for i, line in enumerate(parsed):
         program.extend(generate(len(program), line))
-    
+
     log.debug("Labels: {0}".format(labels))
-    
+
     log.debug("program: {0}".format(program))
-    
+
     # Substitute labels
     for i, c in enumerate(program):
         if isinstance(c, basestring):
@@ -419,7 +419,7 @@ def codegen(source, input_filename="<unknown>"):
             if label not in labels:
                 raise RuntimeError("Undefined label used: {0}".format(c))
             program[i] = labels[label]
-    
+
     # Turn words into bytes
     result = bytes()
     for word in program:
@@ -436,26 +436,26 @@ def main():
         'destination', metavar='OUT', type=str, nargs='?',
         help='file path where to store the binary code')
     args = parser.parse_args()
-    
+
     if not log.handlers:
         from sys import stderr
         handler = logging.StreamHandler(stderr)
         log.addHandler(handler)
         if not DEBUG: handler.setLevel(logging.INFO)
-    
+
     if args.source == "-":
         program = codegen(sys.stdin.read(), "<stdin>")
     else:
         with open(args.source) as fd:
             program = codegen(fd.read(), args.source)
-    
+
     if program is None:
         log.fatal("No program produced.")
         if not DEBUG:
             log.fatal("Run with DEBUG=1 ./asm_pyparsing.py "
                       "for more information.")
         return 1
-    
+
     if not args.destination:
         if os.isatty(sys.stdout.fileno()):
             log.fatal("stdout is a tty, not writing binary. "
@@ -468,7 +468,7 @@ def main():
     log.info("Program written to {0} ({1} bytes, hash={2})"
              .format(args.destination, len(program),
                      hex(abs(hash(program)))))
-            
+
     return 0
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ def example(name):
 def check_path(assembler, path):
     code = subprocess.call([assembler, path, ASSEMBLY_OUTPUT])
     nose.assert_equal(code, 0, "Assembly of {0} failed!".format(path))
-    
+
     assert path.endswith(".asm")
     binary = os.path.join(BINARY_DIR, os.path.basename(path)[:-4] + ".bin")
     if os.path.exists(binary):
