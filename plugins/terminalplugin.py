@@ -8,14 +8,15 @@ import re
 START_ADDRESS = 0x8000
 MIN_DISPLAY_HZ = 60
 
+
 class TerminalPlugin(BasePlugin):
     """
         A plugin to implement terminal selection
     """
 
     arguments = [
-            (["--term"], dict(action="store", default="null", help="Terminal to use (e.g. null, pygame)")),
-            (["--geometry"], dict(action="store", default="80x24", help="Geometry given as `width`x`height`", metavar="SIZE"))]
+        (["--term"], dict(action="store", default="null", help="Terminal to use (e.g. null, pygame)")),
+        (["--geometry"], dict(action="store", default="80x24", help="Geometry given as `width`x`height`", metavar="SIZE"))]
 
     def processkeys(self, cpu):
         keyptr = 0x9000
@@ -31,7 +32,7 @@ class TerminalPlugin(BasePlugin):
         """
             Update the display every .1s or always if debug is on
         """
-        if self.debug or not self.time or (time.time() - self.time >= 1.0/float(MIN_DISPLAY_HZ)):
+        if self.debug or not self.time or (time.time() - self.time >= 1.0 / float(MIN_DISPLAY_HZ)):
             self.time = time.time()
             self.term.redraw()
         self.term.updatekeys()

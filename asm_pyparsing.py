@@ -13,7 +13,8 @@ try:
 except NameError:
     basestring = str
 
-import logging; log = logging.getLogger("dcpu16_asm")
+import logging
+log = logging.getLogger("dcpu16_asm")
 log.setLevel(logging.DEBUG)
 
 import argparse
@@ -24,14 +25,17 @@ import sys
 import pyparsing as P
 from collections import defaultdict
 
+
 # Replace the debug actions so that the results go to the debug log rather
 # than stdout, so that the output can be usefully piped.
 def _defaultStartDebugAction(instring, loc, expr):
     log.debug("Match " + P._ustr(expr) + " at loc " + P._ustr(loc) + "(%d,%d)"
-              % ( P.lineno(loc,instring), P.col(loc,instring) ))
+              % (P.lineno(loc, instring), P.col(loc, instring)))
+
 
 def _defaultSuccessDebugAction(instring, startloc, endloc, expr, toks):
     log.debug("Matched " + P._ustr(expr) + " -> " + str(toks.asList()))
+
 
 def _defaultExceptionDebugAction(instring, loc, expr, exc):
     log.debug("Exception raised:" + P._ustr(exc))
@@ -49,7 +53,7 @@ WORD_MAX = 0xFFFF
 # otherwise \n is also treated as ignorable whitespace
 P.ParserElement.setDefaultWhitespaceChars(" \t")
 
-identifier = P.Word(P.alphas+"_", P.alphanums+"_")
+identifier = P.Word(P.alphas + "_", P.alphanums + "_")
 label = P.Combine(P.Literal(":").suppress() + identifier)
 
 comment = P.Literal(";").suppress() + P.restOfLine
@@ -82,6 +86,7 @@ register.addParseAction(P.upcaseTokens)
 stack_op.addParseAction(P.upcaseTokens)
 opcode.addParseAction(P.upcaseTokens)
 
+
 def sandwich(brackets, expr):
     l, r = brackets
     return P.Literal(l).suppress() + expr + P.Literal(r).suppress()
@@ -92,9 +97,11 @@ indirection = P.Group(sandwich("[]", indirection_content) |
 
 operand = basic_operand("basic") | indirection("indirect")
 
+
 def make_words(data):
-    return [a << 8 | b for a, b in izip_longest(data[::2], data[1::2],
-                                                  fillvalue=0)]
+    return [a << 8 | b for a, b in izip_longest(data[::2], data[1::2], fillvalue=0)]
+
+
 def wordize_string(s, l, tokens):
     bytes = [ord(c) for c in tokens.string]
     # TODO(pwaller): possibly add syntax for packing string data?
@@ -103,6 +110,8 @@ def wordize_string(s, l, tokens):
 
 quoted_string = P.quotedString("string").addParseAction(P.removeQuotes).addParseAction(wordize_string)
 datum = quoted_string | numeric_literal
+
+
 def parse_data(string, loc, tokens):
     result = []
     for token in tokens:
@@ -166,6 +175,7 @@ if DEBUG:
     for name, var in locals().copy().items():
         if isinstance(var, P.ParserElement):
             var.setName(name).setDebug()
+
     def debug_line(string, location, tokens):
         """
         Show the current line number and content being parsed
@@ -187,6 +197,7 @@ IDENTIFIERS = {"A": 0x0, "B": 0x1, "C": 0x2, "X": 0x3, "Y": 0x4, "Z": 0x5,
 OPCODES = {"SET": 0x1, "ADD": 0x2, "SUB": 0x3, "MUL": 0x4, "DIV": 0x5,
            "MOD": 0x6, "SHL": 0x7, "SHR": 0x8, "AND": 0x9, "BOR": 0xA,
            "XOR": 0xB, "IFE": 0xC, "IFN": 0xD, "IFG": 0xE, "IFB": 0xF}
+
 
 def process_operand(o, lvalue=False):
     """
@@ -218,7 +229,8 @@ def process_operand(o, lvalue=False):
             l = b.literal
             if not isinstance(l, basestring) and l < 0x20:
                 return 0x20 | l, None
-            if l == "": raise invalid_op("this is a bug")
+            if l == "":
+                raise invalid_op("this is a bug")
             if isinstance(l, int) and not 0 <= l <= WORD_MAX:
                 raise invalid_op("literal exceeds word size")
             return 0x1F, l
@@ -235,7 +247,6 @@ def process_operand(o, lvalue=False):
             elif ib.stack_op:
                 raise invalid_op("don't use PUSH/POP/PEEK with indirection")
 
-
             elif ib.literal is not None:
                 return 0x1E, ib.literal
 
@@ -246,6 +257,7 @@ def process_operand(o, lvalue=False):
             return 0x10 | IDENTIFIERS[ie.register], ie.literal
 
     raise invalid_op("this is a bug")
+
 
 def codegen(source, input_filename="<unknown>"):
 
@@ -344,7 +356,6 @@ def codegen(source, input_filename="<unknown>"):
                         continue
                     new_macro_call_args[i] = args[arg.basic.literal]
 
-
             lines.append(new_line)
 
         log.debug("Populated macro: {0}"
@@ -371,7 +382,8 @@ def codegen(source, input_filename="<unknown>"):
             labels[label] = offset
 
         s = line.statement
-        if not s: return []
+        if not s:
+            return []
 
         if s.macro_definition:
             process_macro_definition(s.macro_definition)
@@ -395,8 +407,10 @@ def codegen(source, input_filename="<unknown>"):
 
         code = []
         code.append(((b << 10) + (a << 4) + o))
-        if x is not None: code.append(x)
-        if y is not None: code.append(y)
+        if x is not None:
+            code.append(x)
+        if y is not None:
+            code.append(y)
         return code
 
     for i, line in enumerate(parsed):
@@ -426,6 +440,7 @@ def codegen(source, input_filename="<unknown>"):
         result += struct.pack(">H", word)
     return result
 
+
 def main():
     parser = argparse.ArgumentParser(
         description='A simple pyparsing-based DCPU assembly compiler')
@@ -441,7 +456,8 @@ def main():
         from sys import stderr
         handler = logging.StreamHandler(stderr)
         log.addHandler(handler)
-        if not DEBUG: handler.setLevel(logging.INFO)
+        if not DEBUG:
+            handler.setLevel(logging.INFO)
 
     if args.source == "-":
         program = codegen(sys.stdin.read(), "<stdin>")

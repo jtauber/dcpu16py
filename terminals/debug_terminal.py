@@ -1,6 +1,7 @@
 WIDTH = 80
 HEIGHT = 24
 
+
 class Terminal:
     width = WIDTH
     height = HEIGHT

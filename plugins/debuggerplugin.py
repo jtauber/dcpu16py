@@ -7,6 +7,7 @@ except NameError:
     # Python3 raw_input was renamed to input
     raw_input = input
 
+
 class DebuggerPlugin(BasePlugin):
     """
         A plugin to implement a debugger
@@ -74,9 +75,9 @@ Close emulator with Ctrl-D
         if what.startswith("%"):
             what = what[1:]
             if what in registers:
-                return  0x10000 + registers.find(what)
+                return 0x10000 + registers.find(what)
             elif what in specials:
-                return  (dcpu16.PC, dcpu16.SP, dcpu16.O)[specials.index(what)]
+                return (dcpu16.PC, dcpu16.SP, dcpu16.O)[specials.index(what)]
             else:
                 raise ValueError("Invalid register!")
         else:

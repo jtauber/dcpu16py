@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-import importlib
 import inspect
 import struct
-import sys
 import time
 import emuplugin
 import disasm
@@ -226,7 +224,7 @@ class DCPU16:
                     print("skipping")
                 self.skip = False
             else:
-                if 0x01 <= opcode <=0xB: # write to memory
+                if 0x01 <= opcode <= 0xB:  # write to memory
                     oldval = self.memory[arg1]
                     op(arg1, arg2)
                     val = self.memory[arg1]
@@ -253,7 +251,8 @@ class DCPU16:
                 break
 
     def dump_registers(self):
-        print(" ".join("%s=%04X" % (["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
+        print(" ".join("%s=%04X" % (
+            ["A", "B", "C", "X", "Y", "Z", "I", "J"][i],
             self.memory[0x10000 + i]) for i in range(8)))
         print("PC={0:04X} SP={1:04X} O={2:04X}".format(*[self.memory[i] for i in (PC, SP, O)]))
 

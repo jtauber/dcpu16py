@@ -1,8 +1,18 @@
 import pygame
 
+
 class Terminal:
 
-    COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
+    COLORS = [
+        (0, 0, 0),
+        (255, 0, 0),
+        (0, 255, 0),
+        (255, 255, 0),
+        (0, 0, 255),
+        (255, 0, 255),
+        (0, 255, 255),
+        (255, 255, 255)
+    ]
 
     def __init__(self, args):
         self.width = args.width
@@ -29,7 +39,7 @@ class Terminal:
         surf.fill(pygame.Color(*bgcolor))
         char = self.font.render(chr(character), True, fgcolor)
         surf.blit(char, (1, 1))
-        self.screen.blit(surf, (column*self.cell_width, row*self.cell_height))
+        self.screen.blit(surf, (column * self.cell_width, row * self.cell_height))
 
     def show(self):
         pass

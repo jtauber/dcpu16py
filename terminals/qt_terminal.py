@@ -1,13 +1,23 @@
 import sys
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui
 from PyQt4.QtCore import Qt
 
 # Ensure that the QT application does not try to handle (and spam) the KeyboardInterrupt
 import signal
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+
 class Terminal(QtGui.QWidget):
-    COLORS = [(0,0,0), (255,0,0), (0,255,0), (255,255,0), (0,0,255), (255,0,255), (0, 255, 255), (255, 255, 255)]
+    COLORS = [
+        (0, 0, 0),
+        (255, 0, 0),
+        (0, 255, 0),
+        (255, 255, 0),
+        (0, 0, 255),
+        (255, 0, 255),
+        (0, 255, 255),
+        (255, 255, 255)
+    ]
 
     def __init__(self, args):
         self.width = args.width

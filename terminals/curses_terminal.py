@@ -54,7 +54,7 @@ class Terminal:
 
         if self.win_width > self.width:
             try:
-                s = '.'*(self.win_width - self.width)
+                s = "." * (self.win_width - self.width)
                 for y in range(self.height):
                     self.win.addstr(y, self.width, s, color)
             except curses.error:
@@ -62,7 +62,7 @@ class Terminal:
 
         if self.win_height > self.height:
             try:
-                s = '.'*(self.win_width)
+                s = "." * (self.win_width)
                 for y in range(self.height, self.win_height):
                     self.win.addstr(y, 0, s, color)
             except curses.error:

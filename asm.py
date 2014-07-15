@@ -70,20 +70,20 @@ line_regex = re.compile(r"""^\s*
 
 
 IDENTIFIERS = {
-    "A":    0x0,
-    "B":    0x1,
-    "C":    0x2,
-    "X":    0x3,
-    "Y":    0x4,
-    "Z":    0x5,
-    "I":    0x6,
-    "J":    0x7,
-    "POP":  0x18,
+    "A": 0x0,
+    "B": 0x1,
+    "C": 0x2,
+    "X": 0x3,
+    "Y": 0x4,
+    "Z": 0x5,
+    "I": 0x6,
+    "J": 0x7,
+    "POP": 0x18,
     "PEEK": 0x19,
     "PUSH": 0x1a,
-    "SP":   0x1b,
-    "PC":   0x1C,
-    "O":    0x1D
+    "SP": 0x1b,
+    "PC": 0x1C,
+    "O": 0x1D
 }
 
 OPCODES = {
@@ -110,17 +110,17 @@ def clamped_value(l):
 
 
 ADDR_MAP = {
-    "register":              lambda t, v: (IDENTIFIERS[t.upper()], None),
-    "register_indirect":     lambda t, v: (0x08 + IDENTIFIERS[t.upper()], None),
-    "hex_indexed_index":     lambda t, v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
+    "register": lambda t, v: (IDENTIFIERS[t.upper()], None),
+    "register_indirect": lambda t, v: (0x08 + IDENTIFIERS[t.upper()], None),
+    "hex_indexed_index": lambda t, v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
     "decimal_indexed_index": lambda t, v: (0x10 + IDENTIFIERS[t.upper()], int(v, 16)),
-    "label_indexed_index":   lambda t, v: (0x10 + IDENTIFIERS[t.upper()], v),
-    "hex_indirect":          lambda t, v: (0x1E, int(t, 16)),
-    "decimal_indirect":      lambda t, v: (0x1E, int(t)),
-    "hex_literal":           lambda t, v: clamped_value(int(t, 16)),
-    "decimal_literal":       lambda t, v: clamped_value(int(t)),
-    "label_indirect":        lambda t, v: (0x1E, t),
-    "label":                 lambda t, v: (0x1F, t),
+    "label_indexed_index": lambda t, v: (0x10 + IDENTIFIERS[t.upper()], v),
+    "hex_indirect": lambda t, v: (0x1E, int(t, 16)),
+    "decimal_indirect": lambda t, v: (0x1E, int(t)),
+    "hex_literal": lambda t, v: clamped_value(int(t, 16)),
+    "decimal_literal": lambda t, v: clamped_value(int(t)),
+    "label_indirect": lambda t, v: (0x1E, t),
+    "label": lambda t, v: (0x1F, t),
 }
 
 

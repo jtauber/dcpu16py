@@ -1,12 +1,14 @@
-import threading
-import glob, imp
+import glob
+import imp
 from os.path import join, basename, splitext, dirname
 
 PLUGINS_DIR = join(dirname(__file__), "plugins")
 
-def importPlugins(dir = PLUGINS_DIR):
+
+def importPlugins(dir=PLUGINS_DIR):
     # http://tinyurl.com/cfceawr
-    return [_load(path).plugin for path in glob.glob(join(dir,'[!_]*.py'))]
+    return [_load(path).plugin for path in glob.glob(join(dir, "[!_]*.py"))]
+
 
 def _load(path):
     # http://tinyurl.com/cfceawr
